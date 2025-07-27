@@ -32,10 +32,10 @@ export function Footer() {
           <div className="space-y-4">
             <h3 className="text-lg font-display font-semibold">Company</h3>
             <ul className="space-y-2 text-primary-foreground/80">
-              <li><a href="#" className="hover:text-secondary transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-secondary transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-secondary transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-secondary transition-colors">Contact</a></li>
+              <li><a href="/about" className="hover:text-secondary transition-colors">About Us</a></li>
+              <li><a href="/privacy" className="hover:text-secondary transition-colors">Privacy Policy</a></li>
+              <li><a href="/terms" className="hover:text-secondary transition-colors">Terms of Service</a></li>
+              <li><a href="/contact" className="hover:text-secondary transition-colors">Contact</a></li>
             </ul>
           </div>
 
