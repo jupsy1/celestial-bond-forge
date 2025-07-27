@@ -20,20 +20,20 @@ const Services = () => {
   }, []); // Only fetch once on mount
 
   useEffect(() => {
-    applyFilter();
+    applyFilter(filter);
   }, [filter, allServices]); // Apply filter when filter changes or when services are loaded
 
-  const applyFilter = () => {
+  const applyFilter = (filterType: string) => {
     if (allServices.length === 0) return;
     
-    console.log('Applying filter:', filter);
+    console.log('Applying filter:', filterType);
     console.log('All services count:', allServices.length);
     
     let filteredData = allServices;
-    if (filter === "free") {
+    if (filterType === "free") {
       filteredData = allServices.filter((s: any) => s.isFree === true);
       console.log('Free services filtered:', filteredData.length);
-    } else if (filter === "premium") {
+    } else if (filterType === "premium") {
       filteredData = allServices.filter((s: any) => s.isFree === false);
       console.log('Premium services filtered:', filteredData.length);
     }
@@ -165,6 +165,7 @@ const Services = () => {
                 onClick={() => {
                   console.log('Filter button clicked:', key, 'Current filter:', filter);
                   setFilter(key as any);
+                  applyFilter(key);
                 }}
                 className={`${filter === key ? 'cosmic-button' : 'cosmic-card border-primary/30 hover:border-primary/50'}`}
               >
