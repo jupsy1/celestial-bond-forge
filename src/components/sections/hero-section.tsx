@@ -43,7 +43,7 @@ export function HeroSection() {
                 Cosmic Love Story
               </span>
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl text-foreground/90 max-w-2xl mx-auto leading-relaxed font-medium">
               Daily horoscopes, compatibility readings, and celestial guidance to illuminate your romantic journey
             </p>
           </div>
@@ -65,7 +65,7 @@ export function HeroSection() {
           </div>
 
           {/* Social proof */}
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8 text-muted-foreground">
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8 text-foreground/80">
             <div className="flex items-center space-x-2">
               <div className="flex -space-x-1">
                 {[1, 2, 3, 4, 5].map((i) => (
@@ -75,13 +75,13 @@ export function HeroSection() {
                   />
                 ))}
               </div>
-              <span className="text-sm">10,000+ readings delivered</span>
+              <span className="text-sm font-medium">10,000+ readings delivered</span>
             </div>
             <div className="flex items-center space-x-1">
               {[1, 2, 3, 4, 5].map((i) => (
                 <Sparkles key={i} className="h-4 w-4 text-secondary fill-current" />
               ))}
-              <span className="text-sm ml-2">4.9/5 rating</span>
+              <span className="text-sm ml-2 font-medium">4.9/5 rating</span>
             </div>
           </div>
         </div>
