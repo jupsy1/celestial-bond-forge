@@ -10,6 +10,8 @@ interface ServiceCardProps {
   isPopular?: boolean;
   features: string[];
   icon?: "star" | "heart" | "sparkles" | "moon" | "calendar" | "users" | "crown";
+  badge?: string;
+  type?: "free" | "premium" | "subscription";
   onSelect: () => void;
 }
 
@@ -31,6 +33,8 @@ export function ServiceCard({
   isPopular = false,
   features,
   icon = "sparkles",
+  badge,
+  type = "premium",
   onSelect,
 }: ServiceCardProps) {
   const IconComponent = icons[icon];
@@ -57,8 +61,13 @@ export function ServiceCard({
           <div className="text-3xl font-display font-bold text-primary">
             {isFree ? "FREE" : price}
           </div>
+          {badge && (
+            <Badge variant="secondary" className="text-xs">{badge}</Badge>
+          )}
           {!isFree && (
-            <div className="text-sm text-muted-foreground">One-time purchase</div>
+            <div className="text-sm text-muted-foreground">
+              {type === "subscription" ? "Monthly subscription" : "One-time purchase"}
+            </div>
           )}
         </div>
       </div>
@@ -79,7 +88,7 @@ export function ServiceCard({
         onClick={onSelect}
         className={`w-full ${isFree ? 'cosmic-button' : 'cosmic-button'}`}
       >
-        {isFree ? "Try Free Now" : "Get Reading"}
+        {isFree ? "Try Free Now" : type === "subscription" ? "Start Subscription" : "Get Reading"}
       </Button>
     </div>
   );

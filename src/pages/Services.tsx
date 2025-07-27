@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Star, Sparkles, Moon, Calendar, Users, Zap, Crown, Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
 const Services = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [filter, setFilter] = useState<"all" | "free" | "premium">("all");
   const [services, setServices] = useState<any[]>([]);
   const [allServices, setAllServices] = useState<any[]>([]); // Store all services for counting
@@ -64,7 +67,11 @@ const Services = () => {
     } catch (err) {
       console.error('Error fetching services:', err);
       setError('Failed to load services. Please try again.');
-      toast.error('Failed to load services');
+      toast({
+        title: "Error",
+        description: "Failed to load services",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -91,48 +98,64 @@ const Services = () => {
     }
   ];
 
-  const handleServiceSelect = async (serviceId: number) => {
-    const service = services.find(s => s.id === serviceId);
-    if (!service) return;
+  const handleServiceSelect = async (service: any) => {
+    console.log('Selected service:', service.title);
+    
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to purchase services",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    if (service.isFree) {
+      // Handle free services - could navigate to a reading page or generate content
+      toast({
+        title: "Free Service",
+        description: "This feature will be available soon!",
+      });
+      return;
+    }
+
+    // Determine payment type based on service
+    const isSubscription = service.badge === "per month" || service.title.toLowerCase().includes("monthly");
+    
     try {
-      if (service.type === "subscription") {
-        // Handle subscription checkout
-        let stripePlan = "premium";
-        if (service.title.includes("Moon Phase")) stripePlan = "credits_50";
-        if (service.title.includes("Monthly Astro")) stripePlan = "credits_100";
-        if (service.title.includes("Couple's Dashboard")) stripePlan = "premium";
-        
+      if (isSubscription) {
+        // Handle subscription services
         const { data, error } = await supabase.functions.invoke('create-checkout', {
-          body: { plan: stripePlan }
+          body: { 
+            plan: service.title.toLowerCase().includes("unlimited") ? "premium" : "basic",
+            priceId: service.stripe_price_id // You'll need to add this to your services
+          }
         });
         
         if (error) throw error;
-        if (data?.url) {
-          window.open(data.url, '_blank');
-        }
-      } else if (service.type === "premium") {
-        // Handle one-time payment
-        const priceInCents = parseFloat(service.price.replace('$', '')) * 100;
+        window.open(data.url, '_blank');
+      } else {
+        // Handle one-time payments
+        const priceInCents = Math.round(parseFloat(service.price.replace(/[^0-9.]/g, '')) * 100);
+        
         const { data, error } = await supabase.functions.invoke('create-payment', {
-          body: { 
-            serviceId: service.id, 
+          body: {
+            serviceId: service.id,
             amount: priceInCents,
             credits: 0
           }
         });
         
         if (error) throw error;
-        if (data?.url) {
-          window.open(data.url, '_blank');
-        }
-      } else {
-        // Free service - just log for now
-        toast.success("Free service selected! This will redirect to the service page.");
+        window.open(data.url, '_blank');
       }
     } catch (error) {
       console.error('Payment error:', error);
-      toast.error('Payment failed. Please try again.');
+      toast({
+        title: "Payment Error",
+        description: "Failed to initiate payment. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -197,12 +220,14 @@ const Services = () => {
                 <ServiceCard
                   title={service.title}
                   description={service.description}
-                  price={service.badge ? `${service.price}/${service.badge}` : service.price}
+                  price={service.price}
                   isFree={service.isFree}
                   isPopular={service.isPopular}
-                  icon={service.icon}
                   features={service.features}
-                  onSelect={() => handleServiceSelect(service.id)}
+                  icon={service.icon}
+                  badge={service.badge}
+                  type={service.badge === "per month" || service.title.toLowerCase().includes("monthly") ? "subscription" : service.isFree ? "free" : "premium"}
+                  onSelect={() => handleServiceSelect(service)}
                 />
                 
                 {/* Rating Badge */}
