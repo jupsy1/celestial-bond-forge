@@ -24,11 +24,7 @@ const Services = () => {
       setLoading(true);
       setError(null);
 
-      // Build query parameters
-      const params = new URLSearchParams();
-      if (filter !== "all") {
-        params.append("type", filter);
-      }
+      console.log('Fetching services with filter:', filter);
 
       const { data, error } = await supabase.functions.invoke('get-services', {
         method: 'GET'
@@ -37,16 +33,23 @@ const Services = () => {
       if (error) throw error;
 
       if (data?.success) {
+        console.log('Raw services data:', data.data);
+        console.log('Total services received:', data.data.length);
+        
         // Store all services for counting
         setAllServices(data.data);
         
         // Apply client-side filtering
         let filteredData = data.data;
         if (filter === "free") {
-          filteredData = data.data.filter((s: any) => s.isFree);
+          filteredData = data.data.filter((s: any) => s.isFree === true);
+          console.log('Free services filtered:', filteredData.length);
         } else if (filter === "premium") {
-          filteredData = data.data.filter((s: any) => !s.isFree);
+          filteredData = data.data.filter((s: any) => s.isFree === false);
+          console.log('Premium services filtered:', filteredData.length);
         }
+        
+        console.log('Final filtered services:', filteredData.length);
         setServices(filteredData);
       } else {
         throw new Error(data?.error || 'Failed to fetch services');
