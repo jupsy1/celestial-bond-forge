@@ -70,7 +70,7 @@ const Services = () => {
     }
   };
 
-  const filteredServices = services;
+  const filteredServices = services; // Services are already filtered by applyFilter function
 
   const bundleDeals = [
     {
