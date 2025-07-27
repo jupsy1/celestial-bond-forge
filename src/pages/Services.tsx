@@ -162,7 +162,10 @@ const Services = () => {
               <Button
                 key={key}
                 variant={filter === key ? "default" : "outline"}
-                onClick={() => setFilter(key as any)}
+                onClick={() => {
+                  console.log('Filter button clicked:', key, 'Current filter:', filter);
+                  setFilter(key as any);
+                }}
                 className={`${filter === key ? 'cosmic-button' : 'cosmic-card border-primary/30 hover:border-primary/50'}`}
               >
                 {label} ({count})
