@@ -9,8 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Services = () => {
-  const [filter, setFilter] = useState<"all" | "free" | "premium" | "subscription">("all");
+  const [filter, setFilter] = useState<"all" | "free" | "premium">("all");
   const [services, setServices] = useState<any[]>([]);
+  const [allServices, setAllServices] = useState<any[]>([]); // Store all services for counting
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,19 +24,30 @@ const Services = () => {
       setLoading(true);
       setError(null);
 
+      // Build query parameters
       const params = new URLSearchParams();
       if (filter !== "all") {
         params.append("type", filter);
       }
 
       const { data, error } = await supabase.functions.invoke('get-services', {
-        body: { filter }
+        method: 'GET'
       });
 
       if (error) throw error;
 
       if (data?.success) {
-        setServices(data.data);
+        // Store all services for counting
+        setAllServices(data.data);
+        
+        // Apply client-side filtering
+        let filteredData = data.data;
+        if (filter === "free") {
+          filteredData = data.data.filter((s: any) => s.isFree);
+        } else if (filter === "premium") {
+          filteredData = data.data.filter((s: any) => !s.isFree);
+        }
+        setServices(filteredData);
       } else {
         throw new Error(data?.error || 'Failed to fetch services');
       }
@@ -133,10 +145,9 @@ const Services = () => {
           {/* Filter Buttons */}
           <div className="flex flex-wrap justify-center gap-4 mb-12">
             {[
-              { key: "all", label: "All Services", count: services.length },
-              { key: "free", label: "Free", count: services.filter(s => s.type === "free").length },
-              { key: "premium", label: "Premium", count: services.filter(s => s.type === "premium").length },
-              { key: "subscription", label: "Monthly", count: services.filter(s => s.type === "subscription").length }
+              { key: "all", label: "All Services", count: allServices.length },
+              { key: "free", label: "Free", count: allServices.filter(s => s.isFree).length },
+              { key: "premium", label: "Premium", count: allServices.filter(s => !s.isFree).length }
             ].map(({ key, label, count }) => (
               <Button
                 key={key}
