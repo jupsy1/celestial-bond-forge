@@ -9,7 +9,7 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <Sparkles className="h-8 w-8 text-secondary" />
-              <span className="text-2xl font-display font-bold">Celestial</span>
+              <span className="text-2xl font-display font-bold">Star Sign Studio</span>
             </div>
             <p className="text-primary-foreground/80 leading-relaxed">
               Illuminating love stories through the wisdom of the stars. 
@@ -45,7 +45,7 @@ export function Footer() {
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <Mail className="h-5 w-5 text-secondary" />
-                <span className="text-primary-foreground/80">hello@celestial.com</span>
+                <span className="text-primary-foreground/80">hello@starsignstudio.com</span>
               </div>
               <div className="flex space-x-4">
                 <a href="#" className="text-primary-foreground/80 hover:text-secondary transition-colors">
@@ -61,7 +61,7 @@ export function Footer() {
 
         <div className="border-t border-primary-foreground/20 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between">
           <div className="text-primary-foreground/60 text-sm">
-            © 2024 Celestial. All rights reserved.
+            © 2024 Star Sign Studio. All rights reserved.
           </div>
           <div className="flex items-center space-x-2 text-primary-foreground/60 text-sm mt-4 md:mt-0">
             <span>Made with</span>

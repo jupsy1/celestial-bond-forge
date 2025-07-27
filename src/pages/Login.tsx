@@ -73,7 +73,7 @@ const Login = () => {
         <div className="text-center">
           <Link to="/" className="inline-flex items-center space-x-2 mb-8">
             <Sparkles className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-display font-bold text-primary-foreground">Celestial</span>
+            <span className="text-2xl font-display font-bold text-primary-foreground">Star Sign Studio</span>
           </Link>
         </div>
 

@@ -82,7 +82,7 @@ const SignUp = () => {
       if (data.user) {
         toast({
           title: "Account created!",
-          description: "Welcome to Celestial! Check your email to confirm your account.",
+          description: "Welcome to Star Sign Studio! Check your email to confirm your account.",
         });
         // Force page reload for clean state
         window.location.href = '/dashboard';
@@ -109,7 +109,7 @@ const SignUp = () => {
         <div className="text-center">
           <Link to="/" className="inline-flex items-center space-x-2 mb-8">
             <Sparkles className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-display font-bold text-primary-foreground">Celestial</span>
+            <span className="text-2xl font-display font-bold text-primary-foreground">Star Sign Studio</span>
           </Link>
         </div>
 

@@ -310,7 +310,7 @@ const Services = () => {
                 Ready to Begin Your Cosmic Journey?
               </h3>
               <p className="text-muted-foreground mb-6">
-                Start with our free services and discover the power of celestial guidance in your love life.
+                Start with our free services and discover the power of cosmic guidance in your love life.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button className="cosmic-button">
