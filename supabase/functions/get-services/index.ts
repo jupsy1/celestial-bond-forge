@@ -60,7 +60,7 @@ serve(async (req) => {
       id: service.id,
       title: service.name,
       description: service.description,
-      price: service.is_premium ? `$${(service.price_credits / 100).toFixed(2)}` : "FREE",
+      price: service.is_premium ? `£${(service.price_credits / 100).toFixed(2)}` : "FREE",
       type: service.is_premium ? "premium" : "free",
       category: service.category,
       isFree: !service.is_premium,
