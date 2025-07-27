@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/ui/header";
 import { Footer } from "@/components/ui/footer";
 import { ServiceCard } from "@/components/ui/service-card";
@@ -10,181 +10,45 @@ import { toast } from "sonner";
 
 const Services = () => {
   const [filter, setFilter] = useState<"all" | "free" | "premium" | "subscription">("all");
+  const [services, setServices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const allServices = [
-    // FREE SERVICES (2)
-    {
-      id: 1,
-      title: "Daily Love Horoscope",
-      description: "Start your day with cosmic guidance about your love life and romantic opportunities.",
-      price: "FREE",
-      type: "free",
-      isFree: true,
-      icon: "heart" as const,
-      rating: 4.9,
-      features: [
-        "Personalized daily predictions",
-        "Love and relationship insights", 
-        "Best times for romance",
-        "Weekly compatibility highlights"
-      ]
-    },
-    {
-      id: 2,
-      title: "Basic Compatibility Score",
-      description: "Quick compatibility check between any two zodiac signs. Get instant insights into your relationship potential.",
-      price: "FREE",
-      type: "free", 
-      isFree: true,
-      icon: "sparkles" as const,
-      rating: 4.8,
-      badge: "3 per day",
-      features: [
-        "Zodiac sign compatibility percentage",
-        "Basic element harmony analysis",
-        "Instant compatibility score",
-        "3 free checks daily"
-      ]
-    },
+  useEffect(() => {
+    fetchServices();
+  }, [filter]);
 
-    // PREMIUM ONE-TIME SERVICES ($2.99-$6.99)
-    {
-      id: 3,
-      title: "Soul Mate Analysis",
-      description: "Deep dive into your cosmic connection with detailed compatibility insights and relationship guidance.",
-      price: "$4.99",
-      type: "premium",
-      isPopular: true,
-      icon: "heart" as const,
-      rating: 4.9,
-      features: [
-        "Complete astrological compatibility",
-        "Relationship strengths & challenges", 
-        "Communication style analysis",
-        "Long-term potential assessment",
-        "Downloadable PDF report"
-      ]
-    },
-    {
-      id: 4,
-      title: "Weekly Love Forecast",
-      description: "Seven days of detailed romantic predictions covering love, dates, and relationship milestones.",
-      price: "$2.99",
-      type: "premium",
-      icon: "star" as const,
-      rating: 4.7,
-      badge: "per week",
-      features: [
-        "7-day detailed predictions",
-        "Best days for dates & conversations",
-        "Emotional energy patterns",
-        "Weekly relationship goals"
-      ]
-    },
-    {
-      id: 5,
-      title: "Birth Chart Compatibility",
-      description: "Advanced astrological matching using Sun, Moon, and Rising signs for deeper romantic insights.",
-      price: "$6.99",
-      type: "premium",
-      icon: "star" as const,
-      rating: 4.8,
-      features: [
-        "Sun, Moon, Rising sign analysis",
-        "Venus and Mars compatibility",
-        "Advanced astrological matching",
-        "Detailed compatibility report"
-      ]
-    },
-    {
-      id: 6,
-      title: "Zodiac Personality Profile",
-      description: "Complete personality breakdown based on your zodiac sign with relationship and career insights.",
-      price: "$3.99",
-      type: "premium",
-      icon: "sparkles" as const,
-      rating: 4.6,
-      features: [
-        "Complete personality breakdown",
-        "Strengths and weaknesses analysis",
-        "Career and relationship insights",
-        "Personal growth recommendations"
-      ]
-    },
+  const fetchServices = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    // SUBSCRIPTION SERVICES ($4.99-$14.99/month)
-    {
-      id: 7,
-      title: "Moon Phase Love Guide",
-      description: "Monthly moon cycle guidance for romance. Learn when to start relationships and have important conversations.",
-      price: "$4.99",
-      type: "subscription",
-      icon: "moon" as const,
-      rating: 4.8,
-      badge: "per month",
-      features: [
-        "Monthly moon cycle tracking",
-        "Best times for romance by moon phase",
-        "Manifestation guidance",
-        "Monthly ritual suggestions"
-      ]
-    },
-    {
-      id: 8,
-      title: "Monthly Astro Calendar",
-      description: "30-day personalized calendar with daily romantic guidance and cosmic event tracking.",
-      price: "$7.99",
-      type: "subscription",
-      icon: "calendar" as const,
-      rating: 4.7,
-      badge: "per month",
-      features: [
-        "30-day personalized calendar",
-        "Daily best times for love/decisions",
-        "Mercury retrograde warnings",
-        "Venus transit opportunities"
-      ]
-    },
-    {
-      id: 9,
-      title: "Relationship Timeline Planner",
-      description: "6-month relationship roadmap for couples with milestone predictions and compatibility cycles.",
-      price: "$9.99",
-      type: "premium",
-      icon: "users" as const,
-      rating: 4.9,
-      badge: "per couple",
-      features: [
-        "6-month relationship roadmap",
-        "Best times for major decisions",
-        "Compatibility cycles tracking",
-        "Milestone predictions"
-      ]
-    },
-    {
-      id: 10,
-      title: "Couple's Dashboard",
-      description: "Joint account for couples with shared compatibility tracking and daily couple's horoscope.",
-      price: "$14.99",
-      type: "subscription",
-      icon: "crown" as const,
-      rating: 4.9,
-      badge: "per month",
-      isPopular: true,
-      features: [
-        "Joint compatibility tracking",
-        "Daily couple's horoscope",
-        "Relationship health metrics",
-        "Communication timing advice",
-        "Shared calendar integration"
-      ]
+      const params = new URLSearchParams();
+      if (filter !== "all") {
+        params.append("type", filter);
+      }
+
+      const { data, error } = await supabase.functions.invoke('get-services', {
+        body: { filter }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        setServices(data.data);
+      } else {
+        throw new Error(data?.error || 'Failed to fetch services');
+      }
+    } catch (err) {
+      console.error('Error fetching services:', err);
+      setError('Failed to load services. Please try again.');
+      toast.error('Failed to load services');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const filteredServices = allServices.filter(service => {
-    if (filter === "all") return true;
-    return service.type === filter;
-  });
+  const filteredServices = services;
 
   const bundleDeals = [
     {
@@ -206,7 +70,7 @@ const Services = () => {
   ];
 
   const handleServiceSelect = async (serviceId: number) => {
-    const service = allServices.find(s => s.id === serviceId);
+    const service = services.find(s => s.id === serviceId);
     if (!service) return;
 
     try {
@@ -269,10 +133,10 @@ const Services = () => {
           {/* Filter Buttons */}
           <div className="flex flex-wrap justify-center gap-4 mb-12">
             {[
-              { key: "all", label: "All Services", count: allServices.length },
-              { key: "free", label: "Free", count: allServices.filter(s => s.type === "free").length },
-              { key: "premium", label: "Premium", count: allServices.filter(s => s.type === "premium").length },
-              { key: "subscription", label: "Monthly", count: allServices.filter(s => s.type === "subscription").length }
+              { key: "all", label: "All Services", count: services.length },
+              { key: "free", label: "Free", count: services.filter(s => s.type === "free").length },
+              { key: "premium", label: "Premium", count: services.filter(s => s.type === "premium").length },
+              { key: "subscription", label: "Monthly", count: services.filter(s => s.type === "subscription").length }
             ].map(({ key, label, count }) => (
               <Button
                 key={key}
@@ -286,8 +150,24 @@ const Services = () => {
           </div>
 
           {/* Services Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-            {filteredServices.map((service) => (
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="cosmic-card p-8">
+                <p className="text-muted-foreground">Loading celestial services...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="cosmic-card p-8">
+                <p className="text-red-500 mb-4">{error}</p>
+                <Button onClick={fetchServices} className="cosmic-button">
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+              {filteredServices.map((service) => (
               <div key={service.id} className="relative">
                 <ServiceCard
                   title={service.title}
@@ -313,8 +193,9 @@ const Services = () => {
                   </Badge>
                 )}
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* Bundle Deals Section */}
           <div className="space-y-8">
