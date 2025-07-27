@@ -135,13 +135,23 @@ const Services = () => {
         if (error) throw error;
         window.open(data.url, '_blank');
       } else {
-        // Handle one-time payments
-        const priceInCents = Math.round(parseFloat(service.price.replace(/[^0-9.]/g, '')) * 100);
+        // Handle one-time payments - convert £ prices to pence for Stripe
+        let priceInPence;
+        
+        // Extract numeric value from price string and convert to pence
+        const priceMatch = service.price.match(/[\d.]+/);
+        if (priceMatch) {
+          priceInPence = Math.round(parseFloat(priceMatch[0]) * 100); // Convert £ to pence
+        } else {
+          priceInPence = 499; // Default to £4.99 in pence
+        }
+        
+        console.log('Service price:', service.price, 'Converted to pence:', priceInPence);
         
         const { data, error } = await supabase.functions.invoke('create-payment', {
           body: {
             serviceId: service.id,
-            amount: priceInCents,
+            amount: priceInPence,
             credits: 0
           }
         });
