@@ -5,6 +5,8 @@ import { ServiceCard } from "@/components/ui/service-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Star, Sparkles, Moon, Calendar, Users, Zap, Crown, Gift } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Services = () => {
   const [filter, setFilter] = useState<"all" | "free" | "premium" | "subscription">("all");
@@ -203,9 +205,49 @@ const Services = () => {
     }
   ];
 
-  const handleServiceSelect = (serviceId: number) => {
-    console.log("Selected service:", serviceId);
-    // Handle service selection - will integrate with auth/payment
+  const handleServiceSelect = async (serviceId: number) => {
+    const service = allServices.find(s => s.id === serviceId);
+    if (!service) return;
+
+    try {
+      if (service.type === "subscription") {
+        // Handle subscription checkout
+        let stripePlan = "premium";
+        if (service.title.includes("Moon Phase")) stripePlan = "credits_50";
+        if (service.title.includes("Monthly Astro")) stripePlan = "credits_100";
+        if (service.title.includes("Couple's Dashboard")) stripePlan = "premium";
+        
+        const { data, error } = await supabase.functions.invoke('create-checkout', {
+          body: { plan: stripePlan }
+        });
+        
+        if (error) throw error;
+        if (data?.url) {
+          window.open(data.url, '_blank');
+        }
+      } else if (service.type === "premium") {
+        // Handle one-time payment
+        const priceInCents = parseFloat(service.price.replace('$', '')) * 100;
+        const { data, error } = await supabase.functions.invoke('create-payment', {
+          body: { 
+            serviceId: service.id, 
+            amount: priceInCents,
+            credits: 0
+          }
+        });
+        
+        if (error) throw error;
+        if (data?.url) {
+          window.open(data.url, '_blank');
+        }
+      } else {
+        // Free service - just log for now
+        toast.success("Free service selected! This will redirect to the service page.");
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast.error('Payment failed. Please try again.');
+    }
   };
 
   return (
