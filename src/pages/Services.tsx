@@ -224,37 +224,53 @@ const Services = () => {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-              {filteredServices.map((service) => (
-              <div key={service.id} className="relative">
-                <ServiceCard
-                  title={service.title}
-                  description={service.description}
-                  price={service.price}
-                  isFree={service.isFree}
-                  isPopular={service.isPopular}
-                  features={service.features}
-                  icon={service.icon}
-                  badge={service.badge}
-                  type={service.badge === "per month" || service.title.toLowerCase().includes("monthly") ? "subscription" : service.isFree ? "free" : "premium"}
-                  onSelect={() => handleServiceSelect(service)}
-                />
-                
-                {/* Rating Badge */}
-                <div className="absolute top-4 right-4 cosmic-card px-3 py-1 flex items-center space-x-1">
-                  <Star className="h-3 w-3 text-secondary fill-current" />
-                  <span className="text-xs font-medium">{service.rating}</span>
-                </div>
-
-                {/* Additional Badge */}
-                {service.badge && !service.isPopular && (
-                  <Badge className="absolute -top-2 left-4 bg-accent text-accent-foreground">
-                    {service.badge}
-                  </Badge>
-                )}
+            <>
+              {/* Individual Service Sections for Footer Navigation */}
+              <div id="daily-horoscope" className="mb-8">
+                <h3 className="text-2xl font-display font-bold text-foreground mb-6">Daily Horoscope</h3>
               </div>
-              ))}
-            </div>
+              <div id="compatibility" className="mb-8">
+                <h3 className="text-2xl font-display font-bold text-foreground mb-6">Compatibility Reading</h3>
+              </div>
+              <div id="soul-mate" className="mb-8">
+                <h3 className="text-2xl font-display font-bold text-foreground mb-6">Soul Mate Analysis</h3>
+              </div>
+              <div id="birth-chart" className="mb-8">
+                <h3 className="text-2xl font-display font-bold text-foreground mb-6">Birth Chart</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                {filteredServices.map((service) => (
+                <div key={service.id} className="relative">
+                  <ServiceCard
+                    title={service.title}
+                    description={service.description}
+                    price={service.price}
+                    isFree={service.isFree}
+                    isPopular={service.isPopular}
+                    features={service.features}
+                    icon={service.icon}
+                    badge={service.badge}
+                    type={service.badge === "per month" || service.title.toLowerCase().includes("monthly") ? "subscription" : service.isFree ? "free" : "premium"}
+                    onSelect={() => handleServiceSelect(service)}
+                  />
+                  
+                  {/* Rating Badge */}
+                  <div className="absolute top-4 right-4 cosmic-card px-3 py-1 flex items-center space-x-1">
+                    <Star className="h-3 w-3 text-secondary fill-current" />
+                    <span className="text-xs font-medium">{service.rating}</span>
+                  </div>
+
+                  {/* Additional Badge */}
+                  {service.badge && !service.isPopular && (
+                    <Badge className="absolute -top-2 left-4 bg-accent text-accent-foreground">
+                      {service.badge}
+                    </Badge>
+                  )}
+                </div>
+                ))}
+              </div>
+            </>
           )}
 
           {/* Bundle Deals Section */}

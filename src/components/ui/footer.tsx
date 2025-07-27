@@ -21,10 +21,10 @@ export function Footer() {
           <div className="space-y-4">
             <h3 className="text-lg font-display font-semibold">Services</h3>
             <ul className="space-y-2 text-primary-foreground/80">
-              <li><a href="#" className="hover:text-secondary transition-colors">Daily Horoscope</a></li>
-              <li><a href="#" className="hover:text-secondary transition-colors">Compatibility Reading</a></li>
-              <li><a href="#" className="hover:text-secondary transition-colors">Soul Mate Analysis</a></li>
-              <li><a href="#" className="hover:text-secondary transition-colors">Birth Chart</a></li>
+              <li><a href="/services#daily-horoscope" className="hover:text-secondary transition-colors">Daily Horoscope</a></li>
+              <li><a href="/services#compatibility" className="hover:text-secondary transition-colors">Compatibility Reading</a></li>
+              <li><a href="/services#soul-mate" className="hover:text-secondary transition-colors">Soul Mate Analysis</a></li>
+              <li><a href="/services#birth-chart" className="hover:text-secondary transition-colors">Birth Chart</a></li>
             </ul>
           </div>
 
