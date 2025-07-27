@@ -17,14 +17,37 @@ const Services = () => {
 
   useEffect(() => {
     fetchServices();
-  }, [filter]);
+  }, []); // Only fetch once on mount
+
+  useEffect(() => {
+    applyFilter();
+  }, [filter, allServices]); // Apply filter when filter changes or when services are loaded
+
+  const applyFilter = () => {
+    if (allServices.length === 0) return;
+    
+    console.log('Applying filter:', filter);
+    console.log('All services count:', allServices.length);
+    
+    let filteredData = allServices;
+    if (filter === "free") {
+      filteredData = allServices.filter((s: any) => s.isFree === true);
+      console.log('Free services filtered:', filteredData.length);
+    } else if (filter === "premium") {
+      filteredData = allServices.filter((s: any) => s.isFree === false);
+      console.log('Premium services filtered:', filteredData.length);
+    }
+    
+    console.log('Setting services to:', filteredData.length);
+    setServices(filteredData);
+  };
 
   const fetchServices = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      console.log('Fetching services with filter:', filter);
+      console.log('Fetching services...');
 
       const { data, error } = await supabase.functions.invoke('get-services', {
         method: 'GET'
@@ -33,24 +56,8 @@ const Services = () => {
       if (error) throw error;
 
       if (data?.success) {
-        console.log('Raw services data:', data.data);
-        console.log('Total services received:', data.data.length);
-        
-        // Store all services for counting
+        console.log('Raw services data received:', data.data.length);
         setAllServices(data.data);
-        
-        // Apply client-side filtering
-        let filteredData = data.data;
-        if (filter === "free") {
-          filteredData = data.data.filter((s: any) => s.isFree === true);
-          console.log('Free services filtered:', filteredData.length);
-        } else if (filter === "premium") {
-          filteredData = data.data.filter((s: any) => s.isFree === false);
-          console.log('Premium services filtered:', filteredData.length);
-        }
-        
-        console.log('Final filtered services:', filteredData.length);
-        setServices(filteredData);
       } else {
         throw new Error(data?.error || 'Failed to fetch services');
       }
