@@ -329,10 +329,27 @@ const Services = () => {
                 Start with our free services and discover the power of cosmic guidance in your love life.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button className="cosmic-button">
+                <Button 
+                  className="cosmic-button"
+                  onClick={() => {
+                    // Scroll to top of services or navigate to dashboard if logged in
+                    if (user) {
+                      window.location.href = '/dashboard';
+                    } else {
+                      // Scroll to free services
+                      setFilter("free");
+                      applyFilter("free");
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                >
                   Start Free Today
                 </Button>
-                <Button variant="outline" className="cosmic-card border-primary/30 hover:border-primary/50">
+                <Button 
+                  variant="outline" 
+                  className="cosmic-card border-primary/30 hover:border-primary/50"
+                  onClick={() => window.location.href = '/signup'}
+                >
                   Create Account
                 </Button>
               </div>
