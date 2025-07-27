@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Menu, X } from "lucide-react";
+import { Sparkles, Menu, X, User, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
 
   return (
     <header className="bg-background/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
@@ -31,16 +33,37 @@ export function Header() {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/login">
-              <Button variant="ghost" className="text-foreground hover:text-primary">
-                Login
-              </Button>
-            </Link>
-            <Link to="/signup">
-              <Button className="cosmic-button">
-                Sign Up Free
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <Link to="/dashboard">
+                  <Button variant="ghost" className="text-foreground hover:text-primary">
+                    <User className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Button>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  onClick={signOut}
+                  className="text-foreground hover:text-primary"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost" className="text-foreground hover:text-primary">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button className="cosmic-button">
+                    Sign Up Free
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -66,16 +89,37 @@ export function Header() {
                 Reviews
               </a>
               <div className="flex flex-col space-y-2 pt-4 border-t border-border/50">
-                <Link to="/login">
-                  <Button variant="ghost" className="justify-start w-full">
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/signup">
-                  <Button className="cosmic-button justify-start w-full">
-                    Sign Up Free
-                  </Button>
-                </Link>
+                {user ? (
+                  <>
+                    <Link to="/dashboard">
+                      <Button variant="ghost" className="justify-start w-full">
+                        <User className="h-4 w-4 mr-2" />
+                        Dashboard
+                      </Button>
+                    </Link>
+                    <Button 
+                      variant="ghost" 
+                      onClick={signOut}
+                      className="justify-start w-full"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login">
+                      <Button variant="ghost" className="justify-start w-full">
+                        Login
+                      </Button>
+                    </Link>
+                    <Link to="/signup">
+                      <Button className="cosmic-button justify-start w-full">
+                        Sign Up Free
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </nav>
           </div>

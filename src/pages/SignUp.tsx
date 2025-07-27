@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { ZodiacSelector } from "@/components/ui/zodiac-selector";
 import { Sparkles, Eye, EyeOff } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth, cleanupAuthState } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -19,24 +22,80 @@ const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!");
+      toast({
+        title: "Password mismatch",
+        description: "Please make sure your passwords match.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.zodiacSign) {
+      toast({
+        title: "Zodiac sign required",
+        description: "Please select your zodiac sign to continue.",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsLoading(true);
     
-    // TODO: Implement Supabase authentication
-    console.log("Sign up attempt:", formData);
-    
-    setTimeout(() => {
+    try {
+      // Clean up existing state
+      cleanupAuthState();
+      
+      const redirectUrl = `${window.location.origin}/`;
+      
+      // Sign up with email/password
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            display_name: formData.email,
+            zodiac_sign: formData.zodiacSign,
+            birth_date: formData.birthDate || null,
+            marketing_opt_in: formData.marketingOptIn
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (data.user) {
+        toast({
+          title: "Account created!",
+          description: "Welcome to Celestial! Check your email to confirm your account.",
+        });
+        // Force page reload for clean state
+        window.location.href = '/dashboard';
+      }
+    } catch (error: any) {
+      toast({
+        title: "Sign up failed",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-      // Redirect to dashboard on success
-    }, 2000);
+    }
   };
 
   const updateFormData = (field: string, value: string | boolean) => {
