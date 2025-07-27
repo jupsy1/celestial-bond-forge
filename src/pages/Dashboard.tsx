@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   Heart, 
   Star, 
@@ -15,14 +17,21 @@ import {
   Clock,
   RefreshCw,
   Crown,
-  Settings
+  Settings,
+  BookOpen,
+  Eye
 } from "lucide-react";
 
 const Dashboard = () => {
-  const [user] = useState({
-    name: "Sarah",
-    email: "sarah@example.com",
-    zodiacSign: "Scorpio",
+  const { user } = useAuth();
+  const [readings, setReadings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedReading, setSelectedReading] = useState<any>(null);
+
+  const [userProfile] = useState({
+    name: user?.user_metadata?.display_name || "Cosmic Explorer",
+    email: user?.email || "",
+    zodiacSign: user?.user_metadata?.zodiac_sign || "Scorpio",
     symbol: "♏",
     joinDate: "March 2024",
     membershipType: "free"
@@ -41,24 +50,28 @@ const Dashboard = () => {
     luckyTime: "2:00 PM - 4:00 PM"
   });
 
-  const [recentReadings] = useState([
-    {
-      id: 1,
-      type: "Soul Mate Analysis",
-      partner: "Leo",
-      score: 87,
-      date: "2 days ago",
-      status: "completed"
-    },
-    {
-      id: 2,
-      type: "Compatibility Check",
-      partner: "Virgo",
-      score: 72,
-      date: "5 days ago",
-      status: "completed"
+  useEffect(() => {
+    fetchReadings();
+  }, [user]);
+
+  const fetchReadings = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('readings')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setReadings(data || []);
+    } catch (error) {
+      console.error('Error fetching readings:', error);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const [recommendedServices] = useState([
     {
@@ -91,12 +104,12 @@ const Dashboard = () => {
           {/* Welcome Header */}
           <div className="mb-8">
             <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-2">
-              Welcome back, {user.name}
+              Welcome back, {userProfile.name}
             </h1>
             <p className="text-muted-foreground flex items-center space-x-2">
-              <span className="text-2xl">{user.symbol}</span>
-              <span>{user.zodiacSign} • Member since {user.joinDate}</span>
-              {user.membershipType === "premium" && (
+              <span className="text-2xl">{userProfile.symbol}</span>
+              <span>{userProfile.zodiacSign} • Member since {userProfile.joinDate}</span>
+              {userProfile.membershipType === "premium" && (
                 <Crown className="h-5 w-5 text-secondary ml-2" />
               )}
             </p>
@@ -174,37 +187,63 @@ const Dashboard = () => {
                 </div>
               </Card>
 
-              {/* Recent Readings */}
+              {/* Your Readings */}
               <Card className="cosmic-card p-6">
                 <h3 className="text-xl font-display font-bold text-foreground mb-4 flex items-center">
-                  <TrendingUp className="h-5 w-5 text-secondary mr-2" />
-                  Recent Readings
+                  <BookOpen className="h-5 w-5 text-secondary mr-2" />
+                  Your Readings
                 </h3>
                 
                 <div className="space-y-4">
-                  {recentReadings.map((reading) => (
-                    <div key={reading.id} className="flex items-center justify-between p-4 cosmic-card">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 rounded-full bg-gradient-cosmic flex items-center justify-center">
-                          <Users className="h-6 w-6 text-primary-foreground" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-foreground">{reading.type}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            with {reading.partner} • {reading.date}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-primary">{reading.score}%</div>
-                        <Badge variant="secondary">Completed</Badge>
-                      </div>
+                  {loading ? (
+                    <p className="text-muted-foreground">Loading your readings...</p>
+                  ) : readings.length === 0 ? (
+                    <div className="text-center py-8">
+                      <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No readings yet. Purchase a service to get started!</p>
                     </div>
-                  ))}
-                  
-                  <Button variant="outline" className="w-full cosmic-card border-primary/30">
-                    View All Readings
-                  </Button>
+                  ) : (
+                    <>
+                      {readings.slice(0, 3).map((reading) => (
+                        <div key={reading.id} className="flex items-center justify-between p-4 cosmic-card">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 rounded-full bg-gradient-cosmic flex items-center justify-center">
+                              {reading.reading_type === 'forecasts' ? (
+                                <Calendar className="h-6 w-6 text-primary-foreground" />
+                              ) : reading.reading_type === 'tarot' ? (
+                                <Star className="h-6 w-6 text-primary-foreground" />
+                              ) : (
+                                <Sparkles className="h-6 w-6 text-primary-foreground" />
+                              )}
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-foreground">{reading.title}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(reading.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setSelectedReading(reading)}
+                              className="cosmic-card border-primary/30"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {readings.length > 3 && (
+                        <Button variant="outline" className="w-full cosmic-card border-primary/30">
+                          View All {readings.length} Readings
+                        </Button>
+                      )}
+                    </>
+                  )}
                 </div>
               </Card>
             </div>
@@ -221,12 +260,12 @@ const Dashboard = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Membership</span>
-                    <Badge variant={user.membershipType === "premium" ? "default" : "secondary"}>
-                      {user.membershipType === "premium" ? "Premium" : "Free"}
+                    <Badge variant={userProfile.membershipType === "premium" ? "default" : "secondary"}>
+                      {userProfile.membershipType === "premium" ? "Premium" : "Free"}
                     </Badge>
                   </div>
                   
-                  {user.membershipType === "free" && (
+                  {userProfile.membershipType === "free" && (
                     <Button className="cosmic-button w-full">
                       Upgrade to Premium
                     </Button>
@@ -300,6 +339,31 @@ const Dashboard = () => {
               </Card>
             </div>
           </div>
+          
+          {/* Reading Modal */}
+          {selectedReading && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+              <div className="cosmic-card max-w-4xl w-full max-h-[80vh] overflow-y-auto p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-display font-bold text-foreground">{selectedReading.title}</h2>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setSelectedReading(null)}
+                    className="cosmic-card border-primary/30"
+                  >
+                    Close
+                  </Button>
+                </div>
+                <div className="prose prose-invert max-w-none">
+                  <div 
+                    className="text-foreground leading-relaxed whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{ __html: selectedReading.content.replace(/\n/g, '<br>') }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
