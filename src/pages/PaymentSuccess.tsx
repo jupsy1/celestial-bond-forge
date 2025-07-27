@@ -13,17 +13,25 @@ export default function PaymentSuccess() {
 
   useEffect(() => {
     if (sessionId) {
-      // Check subscription status after payment
-      const checkStatus = async () => {
+      // Process payment and generate reading
+      const processPayment = async () => {
         try {
-          await supabase.functions.invoke('check-subscription');
+          const { data, error } = await supabase.functions.invoke('process-payment', {
+            body: { sessionId }
+          });
+          
+          if (error) {
+            console.error('Error processing payment:', error);
+          } else {
+            console.log('Payment processed successfully:', data);
+          }
         } catch (error) {
-          console.error('Error checking subscription:', error);
+          console.error('Error processing payment:', error);
         } finally {
           setLoading(false);
         }
       };
-      checkStatus();
+      processPayment();
     } else {
       setLoading(false);
     }
