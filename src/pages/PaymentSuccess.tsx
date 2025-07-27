@@ -13,26 +13,29 @@ export default function PaymentSuccess() {
 
   useEffect(() => {
     if (sessionId) {
+      console.log('PaymentSuccess: sessionId found:', sessionId);
       // Process payment and generate reading
       const processPayment = async () => {
         try {
+          console.log('PaymentSuccess: calling process-payment function');
           const { data, error } = await supabase.functions.invoke('process-payment', {
             body: { sessionId }
           });
           
           if (error) {
-            console.error('Error processing payment:', error);
+            console.error('PaymentSuccess: Error processing payment:', error);
           } else {
-            console.log('Payment processed successfully:', data);
+            console.log('PaymentSuccess: Payment processed successfully:', data);
           }
         } catch (error) {
-          console.error('Error processing payment:', error);
+          console.error('PaymentSuccess: Error processing payment:', error);
         } finally {
           setLoading(false);
         }
       };
       processPayment();
     } else {
+      console.log('PaymentSuccess: No sessionId found');
       setLoading(false);
     }
   }, [sessionId]);
