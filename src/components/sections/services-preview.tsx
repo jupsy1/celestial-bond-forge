@@ -55,7 +55,7 @@ export function ServicesPreview() {
       <div className="container mx-auto px-4">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-3xl md:text-5xl font-display font-bold text-foreground">
-            Celestial Services
+            Star Sign Studio
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Choose from our mystical offerings to unlock the secrets of your cosmic love story

@@ -178,7 +178,7 @@ const Services = () => {
           {/* Page Header */}
           <div className="text-center space-y-6 mb-16">
             <h1 className="text-4xl md:text-6xl font-display font-bold text-foreground">
-              Celestial Services
+              Star Sign Studio
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               Choose from our complete collection of mystical offerings to unlock the secrets of your cosmic love story. From free daily guidance to premium soul mate analysis.
@@ -211,7 +211,7 @@ const Services = () => {
           {loading ? (
             <div className="text-center py-12">
               <div className="cosmic-card p-8">
-                <p className="text-muted-foreground">Loading celestial services...</p>
+                <p className="text-muted-foreground">Loading services...</p>
               </div>
             </div>
           ) : error ? (
