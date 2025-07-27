@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Menu, X } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -10,16 +11,16 @@ export function Header() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2">
             <Sparkles className="h-8 w-8 text-primary" />
             <span className="text-2xl font-display font-bold text-primary">Celestial</span>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#services" className="text-foreground hover:text-primary transition-colors">
+            <Link to="/services" className="text-foreground hover:text-primary transition-colors">
               Services
-            </a>
+            </Link>
             <a href="#about" className="text-foreground hover:text-primary transition-colors">
               About
             </a>
@@ -30,12 +31,16 @@ export function Header() {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" className="text-foreground hover:text-primary">
-              Login
-            </Button>
-            <Button className="cosmic-button">
-              Sign Up Free
-            </Button>
+            <Link to="/login">
+              <Button variant="ghost" className="text-foreground hover:text-primary">
+                Login
+              </Button>
+            </Link>
+            <Link to="/signup">
+              <Button className="cosmic-button">
+                Sign Up Free
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -51,9 +56,9 @@ export function Header() {
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border/50">
             <nav className="flex flex-col space-y-4">
-              <a href="#services" className="text-foreground hover:text-primary transition-colors">
+              <Link to="/services" className="text-foreground hover:text-primary transition-colors">
                 Services
-              </a>
+              </Link>
               <a href="#about" className="text-foreground hover:text-primary transition-colors">
                 About
               </a>
@@ -61,12 +66,16 @@ export function Header() {
                 Reviews
               </a>
               <div className="flex flex-col space-y-2 pt-4 border-t border-border/50">
-                <Button variant="ghost" className="justify-start">
-                  Login
-                </Button>
-                <Button className="cosmic-button justify-start">
-                  Sign Up Free
-                </Button>
+                <Link to="/login">
+                  <Button variant="ghost" className="justify-start w-full">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button className="cosmic-button justify-start w-full">
+                    Sign Up Free
+                  </Button>
+                </Link>
               </div>
             </nav>
           </div>

@@ -1,6 +1,7 @@
 import { ServiceCard } from "@/components/ui/service-card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function ServicesPreview() {
   const featuredServices = [
@@ -78,10 +79,12 @@ export function ServicesPreview() {
         </div>
 
         <div className="text-center">
-          <Button size="lg" variant="outline" className="cosmic-card border-primary/30 hover:border-primary/50">
-            View All Services
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+          <Link to="/services">
+            <Button size="lg" variant="outline" className="cosmic-card border-primary/30 hover:border-primary/50">
+              View All Services
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

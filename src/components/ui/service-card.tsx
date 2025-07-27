@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, Heart, Sparkles } from "lucide-react";
+import { Star, Heart, Sparkles, Moon, Calendar, Users, Crown } from "lucide-react";
 
 interface ServiceCardProps {
   title: string;
@@ -9,7 +9,7 @@ interface ServiceCardProps {
   isFree?: boolean;
   isPopular?: boolean;
   features: string[];
-  icon?: "star" | "heart" | "sparkles";
+  icon?: "star" | "heart" | "sparkles" | "moon" | "calendar" | "users" | "crown";
   onSelect: () => void;
 }
 
@@ -17,6 +17,10 @@ const icons = {
   star: Star,
   heart: Heart,
   sparkles: Sparkles,
+  moon: Moon,
+  calendar: Calendar,
+  users: Users,
+  crown: Crown,
 };
 
 export function ServiceCard({
