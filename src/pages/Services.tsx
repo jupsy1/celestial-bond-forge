@@ -226,50 +226,188 @@ const Services = () => {
           ) : (
             <>
               {/* Individual Service Sections for Footer Navigation */}
-              <div id="daily-horoscope" className="mb-8">
-                <h3 className="text-2xl font-display font-bold text-foreground mb-6">Daily Horoscope</h3>
-              </div>
-              <div id="compatibility" className="mb-8">
-                <h3 className="text-2xl font-display font-bold text-foreground mb-6">Compatibility Reading</h3>
-              </div>
-              <div id="soul-mate" className="mb-8">
-                <h3 className="text-2xl font-display font-bold text-foreground mb-6">Soul Mate Analysis</h3>
-              </div>
-              <div id="birth-chart" className="mb-8">
-                <h3 className="text-2xl font-display font-bold text-foreground mb-6">Birth Chart</h3>
+              <div className="space-y-16 mb-16">
+                <div id="daily-horoscope" className="cosmic-card p-8 rounded-2xl">
+                  <div className="flex items-center space-x-4 mb-6">
+                    <div className="w-16 h-16 bg-gradient-aurora rounded-full flex items-center justify-center">
+                      <Calendar className="h-8 w-8 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-display font-bold text-foreground">Daily Horoscope</h3>
+                      <p className="text-muted-foreground">Discover what the stars have in store for you today</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredServices.filter(s => s.title.toLowerCase().includes('daily') || s.title.toLowerCase().includes('horoscope')).map((service) => (
+                      <div key={service.id} className="relative">
+                        <ServiceCard
+                          title={service.title}
+                          description={service.description}
+                          price={service.price}
+                          isFree={service.isFree}
+                          isPopular={service.isPopular}
+                          features={service.features}
+                          icon={service.icon}
+                          badge={service.badge}
+                          type={service.badge === "per month" || service.title.toLowerCase().includes("monthly") ? "subscription" : service.isFree ? "free" : "premium"}
+                          onSelect={() => handleServiceSelect(service)}
+                        />
+                        <div className="absolute top-4 right-4 cosmic-card px-3 py-1 flex items-center space-x-1">
+                          <Star className="h-3 w-3 text-secondary fill-current" />
+                          <span className="text-xs font-medium">{service.rating}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div id="compatibility" className="cosmic-card p-8 rounded-2xl">
+                  <div className="flex items-center space-x-4 mb-6">
+                    <div className="w-16 h-16 bg-gradient-aurora rounded-full flex items-center justify-center">
+                      <Heart className="h-8 w-8 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-display font-bold text-foreground">Compatibility Reading</h3>
+                      <p className="text-muted-foreground">Find out how compatible you are with your partner</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredServices.filter(s => s.title.toLowerCase().includes('compatibility') || s.title.toLowerCase().includes('match')).map((service) => (
+                      <div key={service.id} className="relative">
+                        <ServiceCard
+                          title={service.title}
+                          description={service.description}
+                          price={service.price}
+                          isFree={service.isFree}
+                          isPopular={service.isPopular}
+                          features={service.features}
+                          icon={service.icon}
+                          badge={service.badge}
+                          type={service.badge === "per month" || service.title.toLowerCase().includes("monthly") ? "subscription" : service.isFree ? "free" : "premium"}
+                          onSelect={() => handleServiceSelect(service)}
+                        />
+                        <div className="absolute top-4 right-4 cosmic-card px-3 py-1 flex items-center space-x-1">
+                          <Star className="h-3 w-3 text-secondary fill-current" />
+                          <span className="text-xs font-medium">{service.rating}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div id="soul-mate" className="cosmic-card p-8 rounded-2xl">
+                  <div className="flex items-center space-x-4 mb-6">
+                    <div className="w-16 h-16 bg-gradient-aurora rounded-full flex items-center justify-center">
+                      <Sparkles className="h-8 w-8 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-display font-bold text-foreground">Soul Mate Analysis</h3>
+                      <p className="text-muted-foreground">Deep insights into your perfect cosmic connection</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredServices.filter(s => s.title.toLowerCase().includes('soul') || s.title.toLowerCase().includes('mate')).map((service) => (
+                      <div key={service.id} className="relative">
+                        <ServiceCard
+                          title={service.title}
+                          description={service.description}
+                          price={service.price}
+                          isFree={service.isFree}
+                          isPopular={service.isPopular}
+                          features={service.features}
+                          icon={service.icon}
+                          badge={service.badge}
+                          type={service.badge === "per month" || service.title.toLowerCase().includes("monthly") ? "subscription" : service.isFree ? "free" : "premium"}
+                          onSelect={() => handleServiceSelect(service)}
+                        />
+                        <div className="absolute top-4 right-4 cosmic-card px-3 py-1 flex items-center space-x-1">
+                          <Star className="h-3 w-3 text-secondary fill-current" />
+                          <span className="text-xs font-medium">{service.rating}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div id="birth-chart" className="cosmic-card p-8 rounded-2xl">
+                  <div className="flex items-center space-x-4 mb-6">
+                    <div className="w-16 h-16 bg-gradient-aurora rounded-full flex items-center justify-center">
+                      <Moon className="h-8 w-8 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-display font-bold text-foreground">Birth Chart</h3>
+                      <p className="text-muted-foreground">Comprehensive analysis of your astrological blueprint</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredServices.filter(s => s.title.toLowerCase().includes('birth') || s.title.toLowerCase().includes('chart')).map((service) => (
+                      <div key={service.id} className="relative">
+                        <ServiceCard
+                          title={service.title}
+                          description={service.description}
+                          price={service.price}
+                          isFree={service.isFree}
+                          isPopular={service.isPopular}
+                          features={service.features}
+                          icon={service.icon}
+                          badge={service.badge}
+                          type={service.badge === "per month" || service.title.toLowerCase().includes("monthly") ? "subscription" : service.isFree ? "free" : "premium"}
+                          onSelect={() => handleServiceSelect(service)}
+                        />
+                        <div className="absolute top-4 right-4 cosmic-card px-3 py-1 flex items-center space-x-1">
+                          <Star className="h-3 w-3 text-secondary fill-current" />
+                          <span className="text-xs font-medium">{service.rating}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-                {filteredServices.map((service) => (
-                <div key={service.id} className="relative">
-                  <ServiceCard
-                    title={service.title}
-                    description={service.description}
-                    price={service.price}
-                    isFree={service.isFree}
-                    isPopular={service.isPopular}
-                    features={service.features}
-                    icon={service.icon}
-                    badge={service.badge}
-                    type={service.badge === "per month" || service.title.toLowerCase().includes("monthly") ? "subscription" : service.isFree ? "free" : "premium"}
-                    onSelect={() => handleServiceSelect(service)}
-                  />
-                  
-                  {/* Rating Badge */}
-                  <div className="absolute top-4 right-4 cosmic-card px-3 py-1 flex items-center space-x-1">
-                    <Star className="h-3 w-3 text-secondary fill-current" />
-                    <span className="text-xs font-medium">{service.rating}</span>
-                  </div>
+              {/* All Services Grid - for when all services are shown */}
+              {filter === "all" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                  {filteredServices.filter(s => 
+                    !s.title.toLowerCase().includes('daily') && 
+                    !s.title.toLowerCase().includes('horoscope') &&
+                    !s.title.toLowerCase().includes('compatibility') &&
+                    !s.title.toLowerCase().includes('match') &&
+                    !s.title.toLowerCase().includes('soul') &&
+                    !s.title.toLowerCase().includes('mate') &&
+                    !s.title.toLowerCase().includes('birth') &&
+                    !s.title.toLowerCase().includes('chart')
+                  ).map((service) => (
+                    <div key={service.id} className="relative">
+                      <ServiceCard
+                        title={service.title}
+                        description={service.description}
+                        price={service.price}
+                        isFree={service.isFree}
+                        isPopular={service.isPopular}
+                        features={service.features}
+                        icon={service.icon}
+                        badge={service.badge}
+                        type={service.badge === "per month" || service.title.toLowerCase().includes("monthly") ? "subscription" : service.isFree ? "free" : "premium"}
+                        onSelect={() => handleServiceSelect(service)}
+                      />
+                      
+                      {/* Rating Badge */}
+                      <div className="absolute top-4 right-4 cosmic-card px-3 py-1 flex items-center space-x-1">
+                        <Star className="h-3 w-3 text-secondary fill-current" />
+                        <span className="text-xs font-medium">{service.rating}</span>
+                      </div>
 
-                  {/* Additional Badge */}
-                  {service.badge && !service.isPopular && (
-                    <Badge className="absolute -top-2 left-4 bg-accent text-accent-foreground">
-                      {service.badge}
-                    </Badge>
-                  )}
+                      {/* Additional Badge */}
+                      {service.badge && !service.isPopular && (
+                        <Badge className="absolute -top-2 left-4 bg-accent text-accent-foreground">
+                          {service.badge}
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                ))}
-              </div>
+              )}
+            
             </>
           )}
 
