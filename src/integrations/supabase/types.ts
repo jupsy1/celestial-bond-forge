@@ -14,6 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      compatibility_reports: {
+        Row: {
+          advice: string | null
+          challenges: string | null
+          communication_style: string | null
+          compatibility_score: number | null
+          created_at: string
+          friendship_compatibility: string | null
+          id: string
+          love_compatibility: string | null
+          overall_summary: string
+          partner_zodiac: string
+          strengths: string | null
+          user_id: string
+          user_zodiac: string
+        }
+        Insert: {
+          advice?: string | null
+          challenges?: string | null
+          communication_style?: string | null
+          compatibility_score?: number | null
+          created_at?: string
+          friendship_compatibility?: string | null
+          id?: string
+          love_compatibility?: string | null
+          overall_summary: string
+          partner_zodiac: string
+          strengths?: string | null
+          user_id: string
+          user_zodiac: string
+        }
+        Update: {
+          advice?: string | null
+          challenges?: string | null
+          communication_style?: string | null
+          compatibility_score?: number | null
+          created_at?: string
+          friendship_compatibility?: string | null
+          id?: string
+          love_compatibility?: string | null
+          overall_summary?: string
+          partner_zodiac?: string
+          strengths?: string | null
+          user_id?: string
+          user_zodiac?: string
+        }
+        Relationships: []
+      }
+      horoscopes: {
+        Row: {
+          career_forecast: string | null
+          content: string
+          created_at: string
+          date_for: string
+          health_forecast: string | null
+          horoscope_type: string
+          id: string
+          love_forecast: string | null
+          lucky_colors: string[] | null
+          lucky_numbers: number[] | null
+          zodiac_sign: string
+        }
+        Insert: {
+          career_forecast?: string | null
+          content: string
+          created_at?: string
+          date_for: string
+          health_forecast?: string | null
+          horoscope_type: string
+          id?: string
+          love_forecast?: string | null
+          lucky_colors?: string[] | null
+          lucky_numbers?: number[] | null
+          zodiac_sign: string
+        }
+        Update: {
+          career_forecast?: string | null
+          content?: string
+          created_at?: string
+          date_for?: string
+          health_forecast?: string | null
+          horoscope_type?: string
+          id?: string
+          love_forecast?: string | null
+          lucky_colors?: string[] | null
+          lucky_numbers?: number[] | null
+          zodiac_sign?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -47,6 +137,167 @@ export type Database = {
           updated_at?: string
           user_id?: string
           zodiac_sign?: string | null
+        }
+        Relationships: []
+      }
+      readings: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          reading_type: string
+          service_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reading_type: string
+          service_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reading_type?: string
+          service_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "readings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reputation_audits: {
+        Row: {
+          audit_report: string | null
+          business_name: string
+          created_at: string | null
+          email: string
+          first_name: string
+          id: string
+          ip_address: unknown | null
+          last_name: string
+          phone_number: string | null
+          reputation_challenges: string | null
+          status: string | null
+          website_url: string | null
+        }
+        Insert: {
+          audit_report?: string | null
+          business_name: string
+          created_at?: string | null
+          email: string
+          first_name: string
+          id?: string
+          ip_address?: unknown | null
+          last_name: string
+          phone_number?: string | null
+          reputation_challenges?: string | null
+          status?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          audit_report?: string | null
+          business_name?: string
+          created_at?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          ip_address?: unknown | null
+          last_name?: string
+          phone_number?: string | null
+          reputation_challenges?: string | null
+          status?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_premium: boolean | null
+          name: string
+          price_credits: number | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_premium?: boolean | null
+          name: string
+          price_credits?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_premium?: boolean | null
+          name?: string
+          price_credits?: number | null
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          credits_balance: number | null
+          daily_horoscope_enabled: boolean | null
+          email_notifications: boolean | null
+          favorite_services: string[] | null
+          id: string
+          preferred_reading_time: string | null
+          push_notifications: boolean | null
+          subscription_tier: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_balance?: number | null
+          daily_horoscope_enabled?: boolean | null
+          email_notifications?: boolean | null
+          favorite_services?: string[] | null
+          id?: string
+          preferred_reading_time?: string | null
+          push_notifications?: boolean | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_balance?: number | null
+          daily_horoscope_enabled?: boolean | null
+          email_notifications?: boolean | null
+          favorite_services?: string[] | null
+          id?: string
+          preferred_reading_time?: string | null
+          push_notifications?: boolean | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
