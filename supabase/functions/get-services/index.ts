@@ -56,20 +56,25 @@ serve(async (req) => {
     logStep("Services fetched successfully", { count: services?.length || 0 });
 
     // Transform services to match frontend expectations
-    const transformedServices = services?.map(service => ({
-      id: service.id,
-      title: service.name,
-      description: service.description,
-      price: service.is_premium ? `£${(service.price_credits / 100).toFixed(2)}` : "FREE",
-      type: service.is_premium ? "premium" : "free",
-      category: service.category,
-      isFree: !service.is_premium,
-      isPopular: service.price_credits === 499 || service.price_credits === 1499, // Soul Mate Analysis and Couples Dashboard
-      icon: getIconForCategory(service.category),
-      rating: Math.round((4.6 + Math.random() * 0.4) * 10) / 10, // Random rating between 4.6-5.0
-      features: getFeaturesForService(service.name),
-      badge: service.category === "monthly" ? "per month" : undefined
-    })) || [];
+    const transformedServices = services?.map(service => {
+      const price = service.is_premium ? `£${(service.price_credits / 100).toFixed(2)}` : "FREE";
+      logStep("Transforming service", { name: service.name, price_credits: service.price_credits, calculated_price: price });
+      
+      return {
+        id: service.id,
+        title: service.name,
+        description: service.description,
+        price: price,
+        type: service.is_premium ? "premium" : "free",
+        category: service.category,
+        isFree: !service.is_premium,
+        isPopular: service.price_credits === 499 || service.price_credits === 1499, // Soul Mate Analysis and Couples Dashboard
+        icon: getIconForCategory(service.category),
+        rating: Math.round((4.6 + Math.random() * 0.4) * 10) / 10, // Random rating between 4.6-5.0
+        features: getFeaturesForService(service.name),
+        badge: service.category === "monthly" ? "per month" : undefined
+      };
+    }) || [];
 
     return new Response(JSON.stringify({
       success: true,

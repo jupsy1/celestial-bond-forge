@@ -77,14 +77,14 @@ const Dashboard = () => {
     {
       title: "Weekly Love Forecast",
       description: "Get detailed predictions for the week ahead",
-      price: "$2.99",
+      price: "£4.99",
       icon: Calendar,
       discount: "25% off"
     },
     {
       title: "Birth Chart Compatibility",
       description: "Deep dive into astrological matching",
-      price: "$6.99",
+      price: "£4.99",
       icon: Star,
       popular: true
     }

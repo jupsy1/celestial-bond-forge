@@ -83,15 +83,15 @@ const Services = () => {
     {
       title: "Complete Reading Package",
       description: "Soul Mate Analysis + Birth Chart + Personality Profile",
-      originalPrice: "$29.95",
-      price: "$19.99",
-      savings: "Save 30%",
+      originalPrice: "£14.97",
+      price: "£19.99",
+      savings: "Best Value",
       icon: "gift" as const
     },
     {
       title: "Monthly Unlimited",
       description: "All premium services + monthly subscriptions",
-      price: "$24.99",
+      price: "£24.99",
       badge: "per month",
       savings: "Best Value",
       icon: "zap" as const

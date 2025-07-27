@@ -21,7 +21,7 @@ export function ServicesPreview() {
     {
       title: "Soul Mate Analysis",
       description: "Deep dive into your cosmic connection with detailed compatibility insights.",
-      price: "$4.99",
+      price: "£4.99",
       isPopular: true,
       icon: "sparkles" as const,
       features: [
@@ -34,7 +34,7 @@ export function ServicesPreview() {
     {
       title: "Weekly Love Forecast",
       description: "Seven days of detailed predictions covering love, romance, and relationships.",
-      price: "$2.99",
+      price: "£4.99",
       icon: "star" as const,
       features: [
         "7-day detailed predictions",
