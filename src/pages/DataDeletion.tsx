@@ -5,61 +5,61 @@ import { Shield, Trash2, Clock, Mail } from "lucide-react";
 
 export default function DataDeletion() {
   return (
-    <div className="min-h-screen bg-gradient-starfield">
+    <div className="min-h-screen bg-background">
       <Header />
       
       <main className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-display font-bold text-primary-foreground mb-4">
+            <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
               Data Deletion Request
             </h1>
-            <p className="text-xl text-primary-foreground/80 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               We respect your right to control your personal data. Request deletion of your account and associated data here.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <Card className="cosmic-card border-primary/30 p-6 text-center">
-              <Shield className="h-12 w-12 text-secondary mx-auto mb-4" />
-              <h3 className="text-lg font-display font-semibold text-primary-foreground mb-2">
+            <Card className="p-6 text-center">
+              <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
+              <h3 className="text-lg font-display font-semibold text-foreground mb-2">
                 Your Rights
               </h3>
-              <p className="text-primary-foreground/80 text-sm">
+              <p className="text-muted-foreground text-sm">
                 Complete control over your personal data and privacy
               </p>
             </Card>
 
-            <Card className="cosmic-card border-primary/30 p-6 text-center">
-              <Clock className="h-12 w-12 text-secondary mx-auto mb-4" />
-              <h3 className="text-lg font-display font-semibold text-primary-foreground mb-2">
+            <Card className="p-6 text-center">
+              <Clock className="h-12 w-12 text-primary mx-auto mb-4" />
+              <h3 className="text-lg font-display font-semibold text-foreground mb-2">
                 30-Day Process
               </h3>
-              <p className="text-primary-foreground/80 text-sm">
+              <p className="text-muted-foreground text-sm">
                 Complete deletion within 30 days of verified request
               </p>
             </Card>
 
-            <Card className="cosmic-card border-primary/30 p-6 text-center">
-              <Trash2 className="h-12 w-12 text-secondary mx-auto mb-4" />
-              <h3 className="text-lg font-display font-semibold text-primary-foreground mb-2">
+            <Card className="p-6 text-center">
+              <Trash2 className="h-12 w-12 text-primary mx-auto mb-4" />
+              <h3 className="text-lg font-display font-semibold text-foreground mb-2">
                 Permanent Removal
               </h3>
-              <p className="text-primary-foreground/80 text-sm">
+              <p className="text-muted-foreground text-sm">
                 All personal data permanently deleted from our systems
               </p>
             </Card>
           </div>
 
-          <Card className="cosmic-card border-primary/30 p-8">
-            <div className="prose prose-invert max-w-none">
-              <h2 className="text-2xl font-display font-bold text-primary-foreground mb-6">
+          <Card className="p-8">
+            <div className="max-w-none">
+              <h2 className="text-2xl font-display font-bold text-foreground mb-6">
                 Data Deletion Information
               </h2>
 
-              <div className="space-y-6 text-primary-foreground/80">
+              <div className="space-y-6 text-muted-foreground">
                 <section>
-                  <h3 className="text-xl font-display font-semibold text-primary-foreground mb-3">
+                  <h3 className="text-xl font-display font-semibold text-foreground mb-3">
                     What Data Will Be Deleted
                   </h3>
                   <ul className="list-disc pl-6 space-y-2">
@@ -73,14 +73,14 @@ export default function DataDeletion() {
                 </section>
 
                 <section>
-                  <h3 className="text-xl font-display font-semibold text-primary-foreground mb-3">
+                  <h3 className="text-xl font-display font-semibold text-foreground mb-3">
                     How to Request Deletion
                   </h3>
                   <p className="mb-4">
                     To request deletion of your account and all associated data, please send an email to our data protection team with the following information:
                   </p>
                   <ul className="list-disc pl-6 space-y-2">
-                    <li>Subject line: "Data Deletion Request"</li>
+                    <li>Subject line: Data Deletion Request</li>
                     <li>Your full name associated with the account</li>
                     <li>Email address used for the account</li>
                     <li>Date of birth (for verification purposes)</li>
@@ -89,7 +89,7 @@ export default function DataDeletion() {
                 </section>
 
                 <section>
-                  <h3 className="text-xl font-display font-semibold text-primary-foreground mb-3">
+                  <h3 className="text-xl font-display font-semibold text-foreground mb-3">
                     Verification Process
                   </h3>
                   <p className="mb-4">
@@ -104,7 +104,7 @@ export default function DataDeletion() {
                 </section>
 
                 <section>
-                  <h3 className="text-xl font-display font-semibold text-primary-foreground mb-3">
+                  <h3 className="text-xl font-display font-semibold text-foreground mb-3">
                     Important Considerations
                   </h3>
                   <ul className="list-disc pl-6 space-y-2">
@@ -115,9 +115,9 @@ export default function DataDeletion() {
                   </ul>
                 </section>
 
-                <section className="bg-primary/10 p-6 rounded-lg border border-primary/20">
-                  <h3 className="text-xl font-display font-semibold text-primary-foreground mb-3 flex items-center">
-                    <Mail className="h-6 w-6 text-secondary mr-2" />
+                <section className="bg-muted p-6 rounded-lg border">
+                  <h3 className="text-xl font-display font-semibold text-foreground mb-3 flex items-center">
+                    <Mail className="h-6 w-6 text-primary mr-2" />
                     Contact for Data Deletion
                   </h3>
                   <p className="mb-2">
@@ -132,7 +132,7 @@ export default function DataDeletion() {
                 </section>
 
                 <section>
-                  <h3 className="text-xl font-display font-semibold text-primary-foreground mb-3">
+                  <h3 className="text-xl font-display font-semibold text-foreground mb-3">
                     Alternative Options
                   </h3>
                   <p className="mb-4">
