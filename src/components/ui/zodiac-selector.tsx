@@ -50,8 +50,8 @@ export function ZodiacSelector({ selectedSign, onSignSelect, className = "" }: Z
       </Button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 cosmic-card border border-border/50 max-h-96 overflow-y-auto z-50 bg-background">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4">
+        <div className="absolute top-full left-0 right-0 mt-2 cosmic-card border border-border/50 max-h-[480px] overflow-y-auto z-50 bg-background">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3">
             {zodiacSigns.map((zodiac) => (
               <button
                 key={zodiac.sign}
