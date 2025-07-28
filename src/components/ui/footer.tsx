@@ -35,6 +35,7 @@ export function Footer() {
               <li><a href="/about" className="hover:text-secondary transition-colors">About Us</a></li>
               <li><a href="/privacy" className="hover:text-secondary transition-colors">Privacy Policy</a></li>
               <li><a href="/terms" className="hover:text-secondary transition-colors">Terms of Service</a></li>
+              <li><a href="/data-deletion" className="hover:text-secondary transition-colors">Data Deletion</a></li>
               <li><a href="/contact" className="hover:text-secondary transition-colors">Contact</a></li>
             </ul>
           </div>
