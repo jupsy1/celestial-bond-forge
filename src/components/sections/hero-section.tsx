@@ -10,11 +10,14 @@ export function HeroSection() {
   const navigate = useNavigate();
 
   const handleGetReading = () => {
+    console.log("Button clicked, selectedSign:", selectedSign);
     if (selectedSign) {
       // Navigate to signup with selected sign in state
+      console.log("Navigating to signup with sign:", selectedSign);
       navigate('/signup', { state: { selectedSign } });
     } else {
       // Show sign selection prompt
+      console.log("No sign selected, showing alert");
       alert("Please select your zodiac sign first!");
     }
   };

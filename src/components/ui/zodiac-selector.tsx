@@ -56,10 +56,17 @@ export function ZodiacSelector({ selectedSign, onSignSelect, className = "" }: Z
               <button
                 key={zodiac.sign}
                 onClick={() => {
+                  console.log("Zodiac selected:", zodiac.sign);
                   onSignSelect(zodiac.sign);
                   setIsOpen(false);
                 }}
-                className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left min-h-[50px]"
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  console.log("Zodiac selected via touch:", zodiac.sign);
+                  onSignSelect(zodiac.sign);
+                  setIsOpen(false);
+                }}
+                className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted/50 active:bg-muted transition-colors text-left min-h-[50px] touch-manipulation"
               >
                 <span className="text-xl">{zodiac.symbol}</span>
                 <div className="flex-1">
