@@ -111,11 +111,29 @@ const Services = () => {
     }
 
     if (service.isFree) {
-      // Handle free services - could navigate to a reading page or generate content
-      toast({
-        title: "Free Service",
-        description: "This feature will be available soon!",
-      });
+      // Handle free services - navigate to dashboard or show immediate results
+      if (service.title.toLowerCase().includes('daily') || service.title.toLowerCase().includes('horoscope')) {
+        // Navigate to dashboard for daily horoscope
+        window.location.href = '/dashboard';
+      } else if (service.title.toLowerCase().includes('compatibility') || service.title.toLowerCase().includes('score')) {
+        // Show compatibility checker
+        toast({
+          title: "Free Compatibility Check",
+          description: "Checking your compatibility... Redirecting to dashboard!",
+        });
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1500);
+      } else {
+        // For other free services, navigate to dashboard
+        toast({
+          title: "Free Service Activated",
+          description: "Accessing your free service... Redirecting to dashboard!",
+        });
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1500);
+      }
       return;
     }
 
