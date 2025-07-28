@@ -50,8 +50,8 @@ export function ZodiacSelector({ selectedSign, onSignSelect, className = "" }: Z
       </Button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 cosmic-card border border-border/50 max-h-[80vh] overflow-y-auto z-50 bg-background">
-          <div className="grid grid-cols-2 gap-1 p-2">
+        <div className="absolute top-full left-0 right-0 mt-2 cosmic-card border border-border/50 max-h-[70vh] overflow-y-auto z-50 bg-background">
+          <div className="grid grid-cols-2 gap-1 p-1">
             {zodiacSigns.map((zodiac) => (
               <button
                 key={zodiac.sign}
@@ -59,12 +59,12 @@ export function ZodiacSelector({ selectedSign, onSignSelect, className = "" }: Z
                   onSignSelect(zodiac.sign);
                   setIsOpen(false);
                 }}
-                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors text-left min-h-[60px]"
+                className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left min-h-[50px]"
               >
-                <span className="text-2xl">{zodiac.symbol}</span>
-                <div>
-                  <div className="font-display font-semibold text-foreground">{zodiac.sign}</div>
-                  <div className="text-sm text-muted-foreground">{zodiac.dates}</div>
+                <span className="text-xl">{zodiac.symbol}</span>
+                <div className="flex-1">
+                  <div className="font-display font-semibold text-foreground text-sm">{zodiac.sign}</div>
+                  <div className="text-xs text-muted-foreground">{zodiac.dates}</div>
                   <div className="text-xs text-accent font-medium">{zodiac.element}</div>
                 </div>
               </button>
