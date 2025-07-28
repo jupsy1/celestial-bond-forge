@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Header } from "@/components/ui/header";
 import { Footer } from "@/components/ui/footer";
 import { Card } from "@/components/ui/card";
@@ -24,9 +25,11 @@ import {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [readings, setReadings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReading, setSelectedReading] = useState<any>(null);
+  const [activeService, setActiveService] = useState<string>('horoscope');
 
   const [userProfile] = useState({
     name: user?.user_metadata?.display_name || "Cosmic Explorer",
@@ -52,7 +55,12 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchReadings();
-  }, [user]);
+    // Check URL parameter for specific service
+    const service = searchParams.get('service');
+    if (service) {
+      setActiveService(service);
+    }
+  }, [user, searchParams]);
 
   const fetchReadings = async () => {
     if (!user) return;
@@ -118,44 +126,240 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
-              {/* Today's Love Horoscope */}
-              <Card className="cosmic-card p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-display font-bold text-foreground flex items-center">
-                    <Heart className="h-6 w-6 text-primary mr-2" />
-                    Today's Love Horoscope
-                  </h2>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={refreshHoroscope}
-                    className="cosmic-card border-primary/30"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="space-y-4">
-                  <p className="text-foreground leading-relaxed">{todaysHoroscope.love}</p>
+              {/* Service Content */}
+              {activeService === 'horoscope' && (
+                <Card className="cosmic-card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-display font-bold text-foreground flex items-center">
+                      <Heart className="h-6 w-6 text-primary mr-2" />
+                      Today's Love Horoscope
+                    </h2>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={refreshHoroscope}
+                      className="cosmic-card border-primary/30"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-3 cosmic-card">
-                      <div className="text-sm text-muted-foreground">Mood</div>
-                      <div className="font-semibold text-accent">{todaysHoroscope.mood}</div>
-                    </div>
-                    <div className="text-center p-3 cosmic-card">
-                      <div className="text-sm text-muted-foreground">Lucky #</div>
-                      <div className="font-semibold text-secondary">{todaysHoroscope.luckyNumber}</div>
-                    </div>
-                    <div className="text-center p-3 cosmic-card">
-                      <div className="text-sm text-muted-foreground">Best Match</div>
-                      <div className="font-semibold text-primary">{todaysHoroscope.compatibility}</div>
-                    </div>
-                    <div className="text-center p-3 cosmic-card">
-                      <div className="text-sm text-muted-foreground">Lucky Time</div>
-                      <div className="font-semibold text-foreground text-xs">{todaysHoroscope.luckyTime}</div>
+                  <div className="space-y-4">
+                    <p className="text-foreground leading-relaxed">{todaysHoroscope.love}</p>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 cosmic-card">
+                        <div className="text-sm text-muted-foreground">Mood</div>
+                        <div className="font-semibold text-accent">{todaysHoroscope.mood}</div>
+                      </div>
+                      <div className="text-center p-3 cosmic-card">
+                        <div className="text-sm text-muted-foreground">Lucky #</div>
+                        <div className="font-semibold text-secondary">{todaysHoroscope.luckyNumber}</div>
+                      </div>
+                      <div className="text-center p-3 cosmic-card">
+                        <div className="text-sm text-muted-foreground">Best Match</div>
+                        <div className="font-semibold text-primary">{todaysHoroscope.compatibility}</div>
+                      </div>
+                      <div className="text-center p-3 cosmic-card">
+                        <div className="text-sm text-muted-foreground">Lucky Time</div>
+                        <div className="font-semibold text-foreground text-xs">{todaysHoroscope.luckyTime}</div>
+                      </div>
                     </div>
                   </div>
+                </Card>
+              )}
+
+              {activeService === 'compatibility' && (
+                <Card className="cosmic-card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-display font-bold text-foreground flex items-center">
+                      <Users className="h-6 w-6 text-primary mr-2" />
+                      Compatibility Check
+                    </h2>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <p className="text-foreground leading-relaxed">
+                      Enter your partner's zodiac sign to see your compatibility score and detailed analysis.
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-4 cosmic-card">
+                        <div className="text-lg font-bold text-primary mb-2">Your Sign</div>
+                        <div className="text-2xl">{userProfile.symbol}</div>
+                        <div className="font-semibold">{userProfile.zodiacSign}</div>
+                      </div>
+                      <div className="text-center p-4 cosmic-card">
+                        <div className="text-lg font-bold text-primary mb-2">Partner's Sign</div>
+                        <div className="text-2xl">♋</div>
+                        <div className="font-semibold">Cancer</div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-center p-6 cosmic-card bg-gradient-cosmic">
+                      <div className="text-4xl font-bold text-primary-foreground mb-2">85%</div>
+                      <div className="text-primary-foreground">Compatibility Score</div>
+                      <p className="text-sm text-primary-foreground/80 mt-2">
+                        A strong emotional and intuitive connection awaits you both!
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {activeService === 'tarot' && (
+                <Card className="cosmic-card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-display font-bold text-foreground flex items-center">
+                      <Star className="h-6 w-6 text-primary mr-2" />
+                      Daily Tarot Reading
+                    </h2>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <p className="text-foreground leading-relaxed">
+                      Your daily tarot card reveals insights about love, relationships, and emotional growth.
+                    </p>
+                    
+                    <div className="text-center p-8 cosmic-card bg-gradient-cosmic">
+                      <div className="text-6xl mb-4">🃏</div>
+                      <div className="text-xl font-bold text-primary-foreground mb-2">The Lovers</div>
+                      <p className="text-primary-foreground/90">
+                        A powerful card representing deep connections, choices in love, and harmony. 
+                        Today brings opportunities for meaningful relationships and important decisions about your heart.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {activeService === 'forecast' && (
+                <Card className="cosmic-card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-display font-bold text-foreground flex items-center">
+                      <Calendar className="h-6 w-6 text-primary mr-2" />
+                      Weekly Love Forecast
+                    </h2>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <p className="text-foreground leading-relaxed">
+                      Your cosmic love forecast for the week ahead, based on planetary movements and your zodiac energy.
+                    </p>
+                    
+                    <div className="space-y-3">
+                      <div className="p-4 cosmic-card">
+                        <div className="font-semibold text-primary mb-1">Monday - Tuesday</div>
+                        <p className="text-sm text-foreground">Venus energy brings new romantic opportunities. Stay open to unexpected encounters.</p>
+                      </div>
+                      <div className="p-4 cosmic-card">
+                        <div className="font-semibold text-primary mb-1">Wednesday - Thursday</div>
+                        <p className="text-sm text-foreground">Mercury supports clear communication in relationships. Express your feelings honestly.</p>
+                      </div>
+                      <div className="p-4 cosmic-card">
+                        <div className="font-semibold text-primary mb-1">Friday - Weekend</div>
+                        <p className="text-sm text-foreground">Mars brings passion and excitement. Perfect time for romantic dates and deepening connections.</p>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {activeService === 'birth-chart' && (
+                <Card className="cosmic-card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-display font-bold text-foreground flex items-center">
+                      <Sparkles className="h-6 w-6 text-primary mr-2" />
+                      Birth Chart Analysis
+                    </h2>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <p className="text-foreground leading-relaxed">
+                      Discover your cosmic blueprint and how the stars influence your love life and relationships.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-4 cosmic-card text-center">
+                        <div className="text-2xl mb-2">☉</div>
+                        <div className="font-semibold text-primary">Sun Sign</div>
+                        <div className="text-sm">{userProfile.zodiacSign}</div>
+                        <p className="text-xs text-muted-foreground mt-1">Your core identity</p>
+                      </div>
+                      <div className="p-4 cosmic-card text-center">
+                        <div className="text-2xl mb-2">☽</div>
+                        <div className="font-semibold text-primary">Moon Sign</div>
+                        <div className="text-sm">Pisces</div>
+                        <p className="text-xs text-muted-foreground mt-1">Your emotional nature</p>
+                      </div>
+                      <div className="p-4 cosmic-card text-center">
+                        <div className="text-2xl mb-2">♀</div>
+                        <div className="font-semibold text-primary">Venus Sign</div>
+                        <div className="text-sm">Libra</div>
+                        <p className="text-xs text-muted-foreground mt-1">Your love style</p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 cosmic-card">
+                      <h4 className="font-semibold text-primary mb-2">Love Compatibility Insights</h4>
+                      <p className="text-sm text-foreground">
+                        Your Venus in Libra seeks harmony and balance in relationships, while your Moon in Pisces 
+                        brings deep empathy and intuitive understanding. This combination makes you naturally 
+                        attuned to your partner's needs.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {/* Service Navigation */}
+              <Card className="cosmic-card p-4">
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    variant={activeService === 'horoscope' ? 'default' : 'outline'} 
+                    size="sm"
+                    onClick={() => setActiveService('horoscope')}
+                    className={activeService === 'horoscope' ? 'cosmic-button' : 'cosmic-card border-primary/30'}
+                  >
+                    <Heart className="h-4 w-4 mr-1" />
+                    Horoscope
+                  </Button>
+                  <Button 
+                    variant={activeService === 'compatibility' ? 'default' : 'outline'} 
+                    size="sm"
+                    onClick={() => setActiveService('compatibility')}
+                    className={activeService === 'compatibility' ? 'cosmic-button' : 'cosmic-card border-primary/30'}
+                  >
+                    <Users className="h-4 w-4 mr-1" />
+                    Compatibility
+                  </Button>
+                  <Button 
+                    variant={activeService === 'tarot' ? 'default' : 'outline'} 
+                    size="sm"
+                    onClick={() => setActiveService('tarot')}
+                    className={activeService === 'tarot' ? 'cosmic-button' : 'cosmic-card border-primary/30'}
+                  >
+                    <Star className="h-4 w-4 mr-1" />
+                    Tarot
+                  </Button>
+                  <Button 
+                    variant={activeService === 'forecast' ? 'default' : 'outline'} 
+                    size="sm"
+                    onClick={() => setActiveService('forecast')}
+                    className={activeService === 'forecast' ? 'cosmic-button' : 'cosmic-card border-primary/30'}
+                  >
+                    <Calendar className="h-4 w-4 mr-1" />
+                    Forecast
+                  </Button>
+                  <Button 
+                    variant={activeService === 'birth-chart' ? 'default' : 'outline'} 
+                    size="sm"
+                    onClick={() => setActiveService('birth-chart')}
+                    className={activeService === 'birth-chart' ? 'cosmic-button' : 'cosmic-card border-primary/30'}
+                  >
+                    <Sparkles className="h-4 w-4 mr-1" />
+                    Birth Chart
+                  </Button>
                 </div>
               </Card>
 

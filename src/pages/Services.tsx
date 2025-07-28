@@ -111,29 +111,23 @@ const Services = () => {
     }
 
     if (service.isFree) {
-      // Handle free services - navigate to dashboard or show immediate results
+      // Handle free services - navigate to dashboard with specific service parameter
+      let serviceParam = '';
       if (service.title.toLowerCase().includes('daily') || service.title.toLowerCase().includes('horoscope')) {
-        // Navigate to dashboard for daily horoscope
-        window.location.href = '/dashboard';
+        serviceParam = 'horoscope';
       } else if (service.title.toLowerCase().includes('compatibility') || service.title.toLowerCase().includes('score')) {
-        // Show compatibility checker
-        toast({
-          title: "Free Compatibility Check",
-          description: "Checking your compatibility... Redirecting to dashboard!",
-        });
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 1500);
+        serviceParam = 'compatibility';
+      } else if (service.title.toLowerCase().includes('tarot')) {
+        serviceParam = 'tarot';
+      } else if (service.title.toLowerCase().includes('forecast')) {
+        serviceParam = 'forecast';
+      } else if (service.title.toLowerCase().includes('birth') || service.title.toLowerCase().includes('chart')) {
+        serviceParam = 'birth-chart';
       } else {
-        // For other free services, navigate to dashboard
-        toast({
-          title: "Free Service Activated",
-          description: "Accessing your free service... Redirecting to dashboard!",
-        });
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 1500);
+        serviceParam = 'horoscope'; // default
       }
+      
+      window.location.href = `/dashboard?service=${serviceParam}`;
       return;
     }
 
