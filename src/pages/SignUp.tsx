@@ -243,10 +243,50 @@ const SignUp = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="cosmic-card border-primary/30">
+              <Button 
+                variant="outline" 
+                className="cosmic-card border-primary/30"
+                onClick={async () => {
+                  try {
+                    const { error } = await supabase.auth.signInWithOAuth({
+                      provider: 'google',
+                      options: {
+                        redirectTo: `${window.location.origin}/dashboard`
+                      }
+                    });
+                    if (error) throw error;
+                  } catch (error: any) {
+                    toast({
+                      title: "Google sign up failed",
+                      description: "Please try again or use email/password.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              >
                 Google
               </Button>
-              <Button variant="outline" className="cosmic-card border-primary/30">
+              <Button 
+                variant="outline" 
+                className="cosmic-card border-primary/30"
+                onClick={async () => {
+                  try {
+                    const { error } = await supabase.auth.signInWithOAuth({
+                      provider: 'facebook',
+                      options: {
+                        redirectTo: `${window.location.origin}/dashboard`
+                      }
+                    });
+                    if (error) throw error;
+                  } catch (error: any) {
+                    toast({
+                      title: "Facebook sign up failed",
+                      description: "Please try again or use email/password.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              >
                 Facebook
               </Button>
             </div>

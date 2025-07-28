@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Header } from "@/components/ui/header";
 import { Footer } from "@/components/ui/footer";
 import { Mail, MessageCircle, Clock, MapPin } from "lucide-react";
@@ -5,8 +6,55 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Contact() {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    subject: "",
+    message: ""
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      // Simulate form submission - replace with actual email service
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      toast({
+        title: "Message sent!",
+        description: "Thank you for reaching out. We'll get back to you within 24 hours.",
+      });
+      
+      // Reset form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        subject: "",
+        message: ""
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to send",
+        description: "Please try again or contact us directly at hello@starsignstudio.com",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateFormData = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-starfield">
       <Header />
@@ -34,32 +82,53 @@ export default function Contact() {
                   <h2 className="text-2xl font-display font-bold text-primary-foreground mb-6">
                     Send Us a Message
                   </h2>
-                  <form className="space-y-6">
+                  <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-primary-foreground mb-2">
                           First Name
                         </label>
-                        <Input className="bg-white/10 border-white/20 text-primary-foreground" />
+                        <Input 
+                          value={formData.firstName}
+                          onChange={(e) => updateFormData("firstName", e.target.value)}
+                          className="bg-white/10 border-white/20 text-primary-foreground"
+                          required
+                        />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-primary-foreground mb-2">
                           Last Name
                         </label>
-                        <Input className="bg-white/10 border-white/20 text-primary-foreground" />
+                        <Input 
+                          value={formData.lastName}
+                          onChange={(e) => updateFormData("lastName", e.target.value)}
+                          className="bg-white/10 border-white/20 text-primary-foreground"
+                          required
+                        />
                       </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-primary-foreground mb-2">
                         Email Address
                       </label>
-                      <Input type="email" className="bg-white/10 border-white/20 text-primary-foreground" />
+                      <Input 
+                        type="email" 
+                        value={formData.email}
+                        onChange={(e) => updateFormData("email", e.target.value)}
+                        className="bg-white/10 border-white/20 text-primary-foreground"
+                        required
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-primary-foreground mb-2">
                         Subject
                       </label>
-                      <Input className="bg-white/10 border-white/20 text-primary-foreground" />
+                      <Input 
+                        value={formData.subject}
+                        onChange={(e) => updateFormData("subject", e.target.value)}
+                        className="bg-white/10 border-white/20 text-primary-foreground"
+                        required
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-primary-foreground mb-2">
@@ -67,12 +136,19 @@ export default function Contact() {
                       </label>
                       <Textarea 
                         rows={6} 
+                        value={formData.message}
+                        onChange={(e) => updateFormData("message", e.target.value)}
                         className="bg-white/10 border-white/20 text-primary-foreground"
                         placeholder="Tell us about your cosmic questions..."
+                        required
                       />
                     </div>
-                    <Button className="w-full cosmic-button">
-                      Send Your Message to the Stars
+                    <Button 
+                      type="submit"
+                      className="w-full cosmic-button"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Sending..." : "Send Your Message to the Stars"}
                     </Button>
                   </form>
                 </CardContent>
