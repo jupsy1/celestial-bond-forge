@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ZodiacSelector } from "@/components/ui/zodiac-selector";
 import { Sparkles } from "lucide-react";
@@ -6,11 +7,12 @@ import cosmicHero from "@/assets/cosmic-hero.jpg";
 
 export function HeroSection() {
   const [selectedSign, setSelectedSign] = useState<string>("");
+  const navigate = useNavigate();
 
   const handleGetReading = () => {
     if (selectedSign) {
-      // Navigate to reading or show modal
-      console.log("Getting reading for:", selectedSign);
+      // Navigate to signup with selected sign in state
+      navigate('/signup', { state: { selectedSign } });
     } else {
       // Show sign selection prompt
       alert("Please select your zodiac sign first!");
