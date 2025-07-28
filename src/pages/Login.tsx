@@ -157,17 +157,23 @@ const Login = () => {
                 className="cosmic-card border-primary/30"
                 onClick={async () => {
                   try {
-                    const { error } = await supabase.auth.signInWithOAuth({
+                    console.log('Starting Google OAuth...');
+                    const { data, error } = await supabase.auth.signInWithOAuth({
                       provider: 'google',
                       options: {
                         redirectTo: `${window.location.origin}/dashboard`
                       }
                     });
-                    if (error) throw error;
+                    console.log('OAuth response:', { data, error });
+                    if (error) {
+                      console.error('OAuth error:', error);
+                      throw error;
+                    }
                   } catch (error: any) {
+                    console.error('Caught error:', error);
                     toast({
                       title: "Google sign in failed",
-                      description: "Please try again or use email/password.",
+                      description: error.message || "Please check Supabase OAuth configuration.",
                       variant: "destructive",
                     });
                   }
