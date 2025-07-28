@@ -12,9 +12,9 @@ export function HeroSection() {
   const handleGetReading = () => {
     console.log("Button clicked, selectedSign:", selectedSign);
     if (selectedSign) {
-      // Navigate to signup with selected sign in state
-      console.log("Navigating to signup with sign:", selectedSign);
-      navigate('/signup', { state: { selectedSign } });
+      // Navigate to login with selected sign in state
+      console.log("Navigating to login with sign:", selectedSign);
+      navigate('/login', { state: { selectedSign } });
     } else {
       // Show sign selection prompt
       console.log("No sign selected, showing alert");
