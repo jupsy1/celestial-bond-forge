@@ -1,73 +1,141 @@
-# Welcome to your Lovable project
+# Star Sign Studio
 
-## Project info
+**Discover your cosmic love story with personalized astrology and celestial insights.**
 
-**URL**: https://lovable.dev/projects/24f29d05-cb86-4391-871d-0dd49625b4fb
+🌟 **Live Site**: [https://starsignstudio.com](https://starsignstudio.com)
 
-## How can I edit this code?
+## About
 
-There are several ways of editing your application.
+Star Sign Studio is a modern astrology web application that helps users explore their cosmic connections through:
 
-**Use Lovable**
+- **Personalized Horoscopes** - Daily, weekly, and monthly readings tailored to your sign
+- **Love Compatibility** - Discover your romantic compatibility with other zodiac signs  
+- **Celestial Journey** - Explore the deeper meanings behind your astrological profile
+- **Interactive Experience** - Beautiful, responsive design with smooth user interactions
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/24f29d05-cb86-4391-871d-0dd49625b4fb) and start prompting.
+## Features
 
-Changes made via Lovable will be committed automatically to this repo.
+✨ **Modern Authentication**
+- Google OAuth sign-in
+- Facebook OAuth sign-in
+- Secure user sessions with Supabase
 
-**Use your preferred IDE**
+🎨 **Beautiful Design**
+- Responsive layout that works on all devices
+- Dark/light theme support
+- Smooth animations and transitions
+- Accessible UI components
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+🔮 **Astrology Tools**
+- Comprehensive zodiac sign information
+- Compatibility analysis
+- Personalized readings and insights
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Technology Stack
 
-Follow these steps:
+This project is built with modern web technologies:
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **Frontend**: React 18 with TypeScript
+- **Build Tool**: Vite for fast development and optimized builds
+- **Styling**: Tailwind CSS with custom components
+- **UI Components**: shadcn/ui component library
+- **Authentication**: Supabase Auth with OAuth providers
+- **Icons**: Lucide React icon library
+- **Routing**: React Router for navigation
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Getting Started
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Prerequisites
+- Node.js 18+ and npm
+- Git
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/star-sign-studio.git
+
+# Navigate to project directory
+cd star-sign-studio
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The application will be available at `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Available Scripts
 
-**Use GitHub Codespaces**
+```bash
+# Development server with hot reload
+npm run dev
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Build for production
+npm run build
 
-## What technologies are used for this project?
+# Build for development environment
+npm run build:dev
 
-This project is built with:
+# Lint code
+npm run lint
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Preview production build
+npm run preview
+```
 
-## How can I deploy this project?
+## Project Structure
 
-Simply open [Lovable](https://lovable.dev/projects/24f29d05-cb86-4391-871d-0dd49625b4fb) and click on Share -> Publish.
+```
+star-sign-studio/
+├── public/              # Static assets
+├── src/
+│   ├── components/      # Reusable UI components
+│   │   └── ui/         # shadcn/ui components
+│   ├── lib/            # Utility functions and configurations
+│   ├── pages/          # Application pages/routes
+│   ├── hooks/          # Custom React hooks
+│   └── types/          # TypeScript type definitions
+├── index.html          # Main HTML template
+└── vite.config.ts      # Vite configuration
+```
 
-## Can I connect a custom domain to my Lovable project?
+## Authentication Setup
 
-Yes, you can!
+The app uses Supabase for authentication with social providers:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+1. **Google OAuth** - Sign in with your Google account
+2. **Facebook OAuth** - Sign in with your Facebook account
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Both providers are configured to work seamlessly with the `starsignstudio.com` domain.
+
+## Deployment
+
+The application is deployed and accessible at:
+**https://starsignstudio.com**
+
+## Contributing
+
+We welcome contributions to Star Sign Studio! Please feel free to:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contact
+
+For questions, suggestions, or support:
+- **Website**: [starsignstudio.com](https://starsignstudio.com)
+- **Email**: support@starsignstudio.com
+
+---
+
+*Crafted with ✨ cosmic energy and modern web technologies*
