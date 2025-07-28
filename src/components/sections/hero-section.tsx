@@ -49,7 +49,7 @@ export function HeroSection() {
           </div>
 
           {/* Zodiac selector */}
-          <div className="max-w-md mx-auto space-y-4">
+          <div className="max-w-md mx-auto space-y-4 mb-20">
             <ZodiacSelector
               selectedSign={selectedSign}
               onSignSelect={setSelectedSign}
