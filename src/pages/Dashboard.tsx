@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/ui/header";
 import { Footer } from "@/components/ui/footer";
 import { Card } from "@/components/ui/card";
@@ -26,6 +26,7 @@ import {
 const Dashboard = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [readings, setReadings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReading, setSelectedReading] = useState<any>(null);
@@ -527,15 +528,40 @@ const Dashboard = () => {
                 <h3 className="font-display font-bold text-foreground mb-4">Quick Actions</h3>
                 
                 <div className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start cosmic-card border-primary/30">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start cosmic-card border-primary/30"
+                    onClick={() => setActiveService('compatibility')}
+                  >
                     <Heart className="h-4 w-4 mr-2" />
                     Compatibility Check
                   </Button>
-                  <Button variant="outline" className="w-full justify-start cosmic-card border-primary/30">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start cosmic-card border-primary/30"
+                    onClick={() => navigate('/services')}
+                  >
                     <Star className="h-4 w-4 mr-2" />
                     View All Services
                   </Button>
-                  <Button variant="outline" className="w-full justify-start cosmic-card border-primary/30">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start cosmic-card border-primary/30"
+                    onClick={() => {
+                      // Simple invite functionality using Web Share API or fallback to copying link
+                      if (navigator.share) {
+                        navigator.share({
+                          title: 'Join me on this amazing astrology app!',
+                          text: 'Discover your cosmic destiny with personalized horoscopes and compatibility readings.',
+                          url: window.location.origin
+                        });
+                      } else {
+                        // Fallback: copy to clipboard
+                        navigator.clipboard.writeText(window.location.origin);
+                        alert('Link copied to clipboard! Share it with your friends.');
+                      }
+                    }}
+                  >
                     <Users className="h-4 w-4 mr-2" />
                     Invite Friends
                   </Button>
