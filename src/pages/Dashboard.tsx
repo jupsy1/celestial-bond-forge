@@ -565,8 +565,8 @@ const Dashboard = () => {
                       
                       const shareText = `Join me on this amazing astrology app! Discover your cosmic destiny with personalized horoscopes and compatibility readings. ${window.location.origin}`;
                       
-                      // Check if Web Share API is available
-                      if (navigator.share && navigator.canShare && navigator.canShare({ text: shareText })) {
+                      // Check if Web Share API is available - try simpler approach for mobile
+                      if (navigator.share) {
                         console.log('Using Web Share API');
                         navigator.share({
                           title: 'Join me on this amazing astrology app!',
@@ -580,13 +580,19 @@ const Dashboard = () => {
                           });
                         }).catch((error) => {
                           console.log('Web Share API failed:', error);
-                          // Fallback to copying text
-                          copyToClipboard(shareText);
+                          // Simplified fallback - just show the link
+                          toast({
+                            title: "Share this link:",
+                            description: window.location.origin,
+                          });
                         });
                       } else {
-                        console.log('Web Share API not available, using fallback');
-                        // Fallback: copy to clipboard
-                        copyToClipboard(shareText);
+                        console.log('Web Share API not available, showing link');
+                        // Simplified fallback - just show the link to copy manually
+                        toast({
+                          title: "Share this link with friends:",
+                          description: window.location.origin,
+                        });
                       }
                       
                       function copyToClipboard(text: string) {
