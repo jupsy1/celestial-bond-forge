@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Heart, 
   Star, 
@@ -27,6 +28,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [readings, setReadings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReading, setSelectedReading] = useState<any>(null);
@@ -547,18 +549,33 @@ const Dashboard = () => {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start cosmic-card border-primary/30"
-                    onClick={() => {
-                      // Simple invite functionality using Web Share API or fallback to copying link
-                      if (navigator.share) {
-                        navigator.share({
-                          title: 'Join me on this amazing astrology app!',
-                          text: 'Discover your cosmic destiny with personalized horoscopes and compatibility readings.',
-                          url: window.location.origin
+                    onClick={async () => {
+                      try {
+                        // Simple invite functionality using Web Share API or fallback to copying link
+                        if (navigator.share) {
+                          await navigator.share({
+                            title: 'Join me on this amazing astrology app!',
+                            text: 'Discover your cosmic destiny with personalized horoscopes and compatibility readings.',
+                            url: window.location.origin
+                          });
+                          toast({
+                            title: "Shared successfully!",
+                            description: "Your invite has been shared.",
+                          });
+                        } else {
+                          // Fallback: copy to clipboard
+                          await navigator.clipboard.writeText(window.location.origin);
+                          toast({
+                            title: "Link copied!",
+                            description: "Invite link copied to clipboard. Share it with your friends!",
+                          });
+                        }
+                      } catch (error) {
+                        toast({
+                          title: "Error",
+                          description: "Failed to share invite. Please try again.",
+                          variant: "destructive",
                         });
-                      } else {
-                        // Fallback: copy to clipboard
-                        navigator.clipboard.writeText(window.location.origin);
-                        alert('Link copied to clipboard! Share it with your friends.');
                       }
                     }}
                   >
