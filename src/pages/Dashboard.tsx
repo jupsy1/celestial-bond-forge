@@ -549,33 +549,69 @@ const Dashboard = () => {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start cosmic-card border-primary/30"
-                    onClick={async () => {
-                      try {
-                        // Simple invite functionality using Web Share API or fallback to copying link
-                        if (navigator.share) {
-                          await navigator.share({
-                            title: 'Join me on this amazing astrology app!',
-                            text: 'Discover your cosmic destiny with personalized horoscopes and compatibility readings.',
-                            url: window.location.origin
-                          });
+                    onClick={() => {
+                      const shareText = `Join me on this amazing astrology app! Discover your cosmic destiny with personalized horoscopes and compatibility readings. ${window.location.origin}`;
+                      
+                      // Check if Web Share API is available
+                      if (navigator.share && navigator.canShare && navigator.canShare({ text: shareText })) {
+                        navigator.share({
+                          title: 'Join me on this amazing astrology app!',
+                          text: 'Discover your cosmic destiny with personalized horoscopes and compatibility readings.',
+                          url: window.location.origin
+                        }).then(() => {
                           toast({
                             title: "Shared successfully!",
                             description: "Your invite has been shared.",
                           });
+                        }).catch(() => {
+                          // Fallback to copying text
+                          copyToClipboard(shareText);
+                        });
+                      } else {
+                        // Fallback: copy to clipboard
+                        copyToClipboard(shareText);
+                      }
+                      
+                      function copyToClipboard(text: string) {
+                        if (navigator.clipboard && window.isSecureContext) {
+                          navigator.clipboard.writeText(text).then(() => {
+                            toast({
+                              title: "Link copied!",
+                              description: "Invite link copied to clipboard. Share it with your friends!",
+                            });
+                          }).catch(() => {
+                            // Final fallback for older browsers
+                            fallbackCopy(text);
+                          });
                         } else {
-                          // Fallback: copy to clipboard
-                          await navigator.clipboard.writeText(window.location.origin);
+                          // Fallback for non-secure contexts or older browsers
+                          fallbackCopy(text);
+                        }
+                      }
+                      
+                      function fallbackCopy(text: string) {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = text;
+                        textArea.style.position = 'fixed';
+                        textArea.style.opacity = '0';
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        
+                        try {
+                          document.execCommand('copy');
                           toast({
                             title: "Link copied!",
-                            description: "Invite link copied to clipboard. Share it with your friends!",
+                            description: "Invite link copied! Share it with your friends!",
+                          });
+                        } catch (err) {
+                          toast({
+                            title: "Share manually",
+                            description: `Copy this link: ${window.location.origin}`,
                           });
                         }
-                      } catch (error) {
-                        toast({
-                          title: "Error",
-                          description: "Failed to share invite. Please try again.",
-                          variant: "destructive",
-                        });
+                        
+                        document.body.removeChild(textArea);
                       }
                     }}
                   >
