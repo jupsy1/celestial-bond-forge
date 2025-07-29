@@ -533,7 +533,11 @@ const Dashboard = () => {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start cosmic-card border-primary/30"
-                    onClick={() => setActiveService('compatibility')}
+                    onClick={() => {
+                      console.log('Compatibility Check clicked');
+                      setActiveService('compatibility');
+                      console.log('ActiveService set to compatibility');
+                    }}
                   >
                     <Heart className="h-4 w-4 mr-2" />
                     Compatibility Check
@@ -541,7 +545,11 @@ const Dashboard = () => {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start cosmic-card border-primary/30"
-                    onClick={() => navigate('/services')}
+                    onClick={() => {
+                      console.log('View All Services clicked');
+                      navigate('/services');
+                      console.log('Navigation to /services triggered');
+                    }}
                   >
                     <Star className="h-4 w-4 mr-2" />
                     View All Services
@@ -550,46 +558,61 @@ const Dashboard = () => {
                     variant="outline" 
                     className="w-full justify-start cosmic-card border-primary/30"
                     onClick={() => {
+                      console.log('Invite Friends clicked');
+                      console.log('Navigator share available:', !!navigator.share);
+                      console.log('Navigator clipboard available:', !!navigator.clipboard);
+                      console.log('Window secure context:', window.isSecureContext);
+                      
                       const shareText = `Join me on this amazing astrology app! Discover your cosmic destiny with personalized horoscopes and compatibility readings. ${window.location.origin}`;
                       
                       // Check if Web Share API is available
                       if (navigator.share && navigator.canShare && navigator.canShare({ text: shareText })) {
+                        console.log('Using Web Share API');
                         navigator.share({
                           title: 'Join me on this amazing astrology app!',
                           text: 'Discover your cosmic destiny with personalized horoscopes and compatibility readings.',
                           url: window.location.origin
                         }).then(() => {
+                          console.log('Web Share API success');
                           toast({
                             title: "Shared successfully!",
                             description: "Your invite has been shared.",
                           });
-                        }).catch(() => {
+                        }).catch((error) => {
+                          console.log('Web Share API failed:', error);
                           // Fallback to copying text
                           copyToClipboard(shareText);
                         });
                       } else {
+                        console.log('Web Share API not available, using fallback');
                         // Fallback: copy to clipboard
                         copyToClipboard(shareText);
                       }
                       
                       function copyToClipboard(text: string) {
+                        console.log('Attempting clipboard copy');
                         if (navigator.clipboard && window.isSecureContext) {
+                          console.log('Using modern clipboard API');
                           navigator.clipboard.writeText(text).then(() => {
+                            console.log('Clipboard API success');
                             toast({
                               title: "Link copied!",
                               description: "Invite link copied to clipboard. Share it with your friends!",
                             });
-                          }).catch(() => {
+                          }).catch((error) => {
+                            console.log('Clipboard API failed:', error);
                             // Final fallback for older browsers
                             fallbackCopy(text);
                           });
                         } else {
+                          console.log('Clipboard API not available, using textarea fallback');
                           // Fallback for non-secure contexts or older browsers
                           fallbackCopy(text);
                         }
                       }
                       
                       function fallbackCopy(text: string) {
+                        console.log('Using textarea fallback method');
                         const textArea = document.createElement('textarea');
                         textArea.value = text;
                         textArea.style.position = 'fixed';
@@ -599,12 +622,14 @@ const Dashboard = () => {
                         textArea.select();
                         
                         try {
-                          document.execCommand('copy');
+                          const success = document.execCommand('copy');
+                          console.log('Document.execCommand copy result:', success);
                           toast({
                             title: "Link copied!",
                             description: "Invite link copied! Share it with your friends!",
                           });
                         } catch (err) {
+                          console.log('Document.execCommand failed:', err);
                           toast({
                             title: "Share manually",
                             description: `Copy this link: ${window.location.origin}`,
