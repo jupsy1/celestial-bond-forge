@@ -34,13 +34,16 @@ const Dashboard = () => {
   const [selectedReading, setSelectedReading] = useState<any>(null);
   const [activeService, setActiveService] = useState<string>('horoscope');
 
-  const [userProfile] = useState({
+  const [userProfile, setUserProfile] = useState({
     name: user?.user_metadata?.display_name || "Cosmic Explorer",
     email: user?.email || "",
     zodiacSign: user?.user_metadata?.zodiac_sign || "Scorpio",
     symbol: "♏",
-    joinDate: "March 2024",
-    membershipType: "free"
+    joinDate: "",
+    membershipType: "free",
+    birthDate: null as string | null,
+    moonSign: "",
+    venusSign: ""
   });
 
   const [dailyLimits] = useState({
@@ -57,6 +60,12 @@ const Dashboard = () => {
   });
 
   useEffect(() => {
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user]);
+
+  useEffect(() => {
     fetchReadings();
     // Check URL parameter for specific service
     const service = searchParams.get('service');
@@ -64,6 +73,68 @@ const Dashboard = () => {
       setActiveService(service);
     }
   }, [user, searchParams]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching profile:', error);
+        setLoading(false);
+        return;
+      }
+
+      if (profile) {
+        const joinDate = new Date(profile.created_at).toLocaleDateString('en-US', { 
+          month: 'long', 
+          year: 'numeric' 
+        });
+
+        // Generate realistic astrological placements based on birth date or zodiac sign
+        const moonSigns = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
+        const venusSigns = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
+        
+        // Use birth date or zodiac sign for consistent generation
+        const seedValue = profile.birth_date || profile.zodiac_sign || 'Scorpio';
+        const hashCode = seedValue.split('').reduce((a, b) => {
+          a = ((a << 5) - a) + b.charCodeAt(0);
+          return a & a;
+        }, 0);
+        
+        const moonSign = moonSigns[Math.abs(hashCode) % moonSigns.length];
+        const venusSign = venusSigns[Math.abs(hashCode + 1) % venusSigns.length];
+
+        setUserProfile({
+          name: profile.display_name || user?.user_metadata?.display_name || "Cosmic Explorer",
+          email: user?.email || "",
+          zodiacSign: profile.zodiac_sign || "Scorpio",
+          symbol: getZodiacSymbol(profile.zodiac_sign || "Scorpio"),
+          joinDate,
+          membershipType: "free",
+          birthDate: profile.birth_date,
+          moonSign,
+          venusSign
+        });
+      }
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getZodiacSymbol = (sign: string) => {
+    const symbols: { [key: string]: string } = {
+      'Aries': '♈', 'Taurus': '♉', 'Gemini': '♊', 'Cancer': '♋',
+      'Leo': '♌', 'Virgo': '♍', 'Libra': '♎', 'Scorpio': '♏',
+      'Sagittarius': '♐', 'Capricorn': '♑', 'Aquarius': '♒', 'Pisces': '♓'
+    };
+    return symbols[sign] || '♏';
+  };
 
   const fetchReadings = async () => {
     if (!user) return;
@@ -292,13 +363,13 @@ const Dashboard = () => {
                       <div className="p-4 cosmic-card text-center">
                         <div className="text-2xl mb-2">☽</div>
                         <div className="font-semibold text-primary">Moon Sign</div>
-                        <div className="text-sm">Pisces</div>
+                        <div className="text-sm">{userProfile.moonSign}</div>
                         <p className="text-xs text-muted-foreground mt-1">Your emotional nature</p>
                       </div>
                       <div className="p-4 cosmic-card text-center">
                         <div className="text-2xl mb-2">♀</div>
                         <div className="font-semibold text-primary">Venus Sign</div>
-                        <div className="text-sm">Libra</div>
+                        <div className="text-sm">{userProfile.venusSign}</div>
                         <p className="text-xs text-muted-foreground mt-1">Your love style</p>
                       </div>
                     </div>
@@ -306,9 +377,8 @@ const Dashboard = () => {
                     <div className="p-4 cosmic-card">
                       <h4 className="font-semibold text-primary mb-2">Love Compatibility Insights</h4>
                       <p className="text-sm text-foreground">
-                        Your Venus in Libra seeks harmony and balance in relationships, while your Moon in Pisces 
-                        brings deep empathy and intuitive understanding. This combination makes you naturally 
-                        attuned to your partner's needs.
+                        Your Venus in {userProfile.venusSign} influences your love style and relationships, while your Moon in {userProfile.moonSign} 
+                        shapes your emotional nature and intuition. This unique combination creates your personal approach to love and connection.
                       </p>
                     </div>
                   </div>
