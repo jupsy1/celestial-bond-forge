@@ -630,7 +630,53 @@ const Dashboard = () => {
                   </div>
                   
                   {userProfile.membershipType === "free" && (
-                    <Button className="cosmic-button w-full">
+                    <Button 
+                      className="cosmic-button w-full"
+                      onClick={async () => {
+                        console.log('=== UPGRADE TO PREMIUM CLICKED ===');
+                        console.log('User state:', { user: !!user, email: user?.email });
+                        
+                        if (!user) {
+                          toast({
+                            title: "Authentication Required",
+                            description: "Please log in to upgrade to premium",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+
+                        try {
+                          console.log('Calling create-checkout for premium subscription...');
+                          const { data, error } = await supabase.functions.invoke('create-checkout', {
+                            body: { 
+                              plan: "premium"
+                            }
+                          });
+
+                          console.log('create-checkout response:', { data, error });
+                          
+                          if (error) {
+                            console.error('Checkout error details:', error);
+                            throw new Error(error.message || 'Failed to create checkout session');
+                          }
+
+                          if (data?.url) {
+                            console.log('Opening checkout URL:', data.url);
+                            window.open(data.url, '_blank');
+                          } else {
+                            throw new Error('No checkout URL received');
+                          }
+                        } catch (error) {
+                          console.error('Premium upgrade error:', error);
+                          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                          toast({
+                            title: "Upgrade Error",
+                            description: `Failed to start premium upgrade: ${errorMessage}`,
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                    >
                       Upgrade to Premium
                     </Button>
                   )}
