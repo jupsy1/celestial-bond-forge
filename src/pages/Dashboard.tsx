@@ -458,7 +458,11 @@ const Dashboard = () => {
                   <Button 
                     variant={activeService === 'horoscope' ? 'default' : 'outline'} 
                     size="sm"
-                    onClick={() => setActiveService('horoscope')}
+                    onClick={() => {
+                      console.log('Horoscope tab clicked, current activeService:', activeService);
+                      setActiveService('horoscope');
+                      console.log('Horoscope tab - activeService set to: horoscope');
+                    }}
                     className={activeService === 'horoscope' ? 'cosmic-button' : 'cosmic-card border-primary/30'}
                   >
                     <Heart className="h-4 w-4 mr-1" />
@@ -467,7 +471,11 @@ const Dashboard = () => {
                   <Button 
                     variant={activeService === 'compatibility' ? 'default' : 'outline'} 
                     size="sm"
-                    onClick={() => setActiveService('compatibility')}
+                    onClick={() => {
+                      console.log('Compatibility tab clicked, current activeService:', activeService);
+                      setActiveService('compatibility');
+                      console.log('Compatibility tab - activeService set to: compatibility');
+                    }}
                     className={activeService === 'compatibility' ? 'cosmic-button' : 'cosmic-card border-primary/30'}
                   >
                     <Users className="h-4 w-4 mr-1" />
@@ -476,7 +484,11 @@ const Dashboard = () => {
                   <Button 
                     variant={activeService === 'tarot' ? 'default' : 'outline'} 
                     size="sm"
-                    onClick={() => setActiveService('tarot')}
+                    onClick={() => {
+                      console.log('Tarot tab clicked, current activeService:', activeService);
+                      setActiveService('tarot');
+                      console.log('Tarot tab - activeService set to: tarot');
+                    }}
                     className={activeService === 'tarot' ? 'cosmic-button' : 'cosmic-card border-primary/30'}
                   >
                     <Star className="h-4 w-4 mr-1" />
@@ -485,7 +497,11 @@ const Dashboard = () => {
                   <Button 
                     variant={activeService === 'forecast' ? 'default' : 'outline'} 
                     size="sm"
-                    onClick={() => setActiveService('forecast')}
+                    onClick={() => {
+                      console.log('Forecast tab clicked, current activeService:', activeService);
+                      setActiveService('forecast');
+                      console.log('Forecast tab - activeService set to: forecast');
+                    }}
                     className={activeService === 'forecast' ? 'cosmic-button' : 'cosmic-card border-primary/30'}
                   >
                     <Calendar className="h-4 w-4 mr-1" />
@@ -494,7 +510,11 @@ const Dashboard = () => {
                   <Button 
                     variant={activeService === 'birth-chart' ? 'default' : 'outline'} 
                     size="sm"
-                    onClick={() => setActiveService('birth-chart')}
+                    onClick={() => {
+                      console.log('Birth Chart tab clicked, current activeService:', activeService);
+                      setActiveService('birth-chart');
+                      console.log('Birth Chart tab - activeService set to: birth-chart');
+                    }}
                     className={activeService === 'birth-chart' ? 'cosmic-button' : 'cosmic-card border-primary/30'}
                   >
                     <Sparkles className="h-4 w-4 mr-1" />
