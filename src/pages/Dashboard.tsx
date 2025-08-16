@@ -632,11 +632,20 @@ const Dashboard = () => {
                   {userProfile.membershipType === "free" && (
                     <Button 
                       className="cosmic-button w-full"
-                      onClick={async () => {
+                      onClick={(e) => {
+                        // Basic click test
+                        console.log('BUTTON CLICKED!');
+                        console.log('Click event:', e);
+                        console.log('Current page URL:', window.location.href);
+                        console.log('Current pathname:', window.location.pathname);
+                        
+                        alert('Premium upgrade button clicked! Check console for details.');
+                        
                         console.log('=== UPGRADE TO PREMIUM CLICKED ===');
                         console.log('User state:', { user: !!user, email: user?.email });
                         
                         if (!user) {
+                          console.log('No user found!');
                           toast({
                             title: "Authentication Required",
                             description: "Please log in to upgrade to premium",
@@ -645,36 +654,41 @@ const Dashboard = () => {
                           return;
                         }
 
-                        try {
-                          console.log('Calling create-checkout for premium subscription...');
-                          const { data, error } = await supabase.functions.invoke('create-checkout', {
-                            body: { 
-                              plan: "premium"
+                        // Rest of the payment logic
+                        const handleUpgrade = async () => {
+                          try {
+                            console.log('Calling create-checkout for premium subscription...');
+                            const { data, error } = await supabase.functions.invoke('create-checkout', {
+                              body: { 
+                                plan: "premium"
+                              }
+                            });
+
+                            console.log('create-checkout response:', { data, error });
+                            
+                            if (error) {
+                              console.error('Checkout error details:', error);
+                              throw new Error(error.message || 'Failed to create checkout session');
                             }
-                          });
 
-                          console.log('create-checkout response:', { data, error });
-                          
-                          if (error) {
-                            console.error('Checkout error details:', error);
-                            throw new Error(error.message || 'Failed to create checkout session');
+                            if (data?.url) {
+                              console.log('Opening checkout URL:', data.url);
+                              window.open(data.url, '_blank');
+                            } else {
+                              throw new Error('No checkout URL received');
+                            }
+                          } catch (error) {
+                            console.error('Premium upgrade error:', error);
+                            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+                            toast({
+                              title: "Upgrade Error",
+                              description: `Failed to start premium upgrade: ${errorMessage}`,
+                              variant: "destructive",
+                            });
                           }
-
-                          if (data?.url) {
-                            console.log('Opening checkout URL:', data.url);
-                            window.open(data.url, '_blank');
-                          } else {
-                            throw new Error('No checkout URL received');
-                          }
-                        } catch (error) {
-                          console.error('Premium upgrade error:', error);
-                          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                          toast({
-                            title: "Upgrade Error",
-                            description: `Failed to start premium upgrade: ${errorMessage}`,
-                            variant: "destructive",
-                          });
-                        }
+                        };
+                        
+                        handleUpgrade();
                       }}
                     >
                       Upgrade to Premium
