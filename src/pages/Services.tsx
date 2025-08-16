@@ -204,16 +204,22 @@ const Services = () => {
       
       if (isSubscription) {
         // Handle subscription bundles
+        console.log('Calling create-checkout for subscription bundle');
         const { data, error } = await supabase.functions.invoke('create-checkout', {
           body: { 
             plan: "premium" // Bundles are typically premium
           }
         });
         
-        if (error) throw error;
+        console.log('create-checkout response:', { data, error });
+        if (error) {
+          console.error('create-checkout error details:', error);
+          throw new Error(error.message || 'Failed to create checkout session');
+        }
         window.open(data.url, '_blank');
       } else {
         // Handle one-time bundle payments
+        console.log('Calling create-payment for one-time bundle');
         const { data, error } = await supabase.functions.invoke('create-payment', {
           body: {
             serviceId: `bundle-${bundle.title.toLowerCase().replace(/\s+/g, '-')}`,
@@ -222,14 +228,19 @@ const Services = () => {
           }
         });
         
-        if (error) throw error;
+        console.log('create-payment response:', { data, error });
+        if (error) {
+          console.error('create-payment error details:', error);
+          throw new Error(error.message || 'Failed to create payment session');
+        }
         window.open(data.url, '_blank');
       }
     } catch (error) {
       console.error('Bundle payment error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Payment Error",
-        description: "Failed to initiate bundle payment. Please try again.",
+        description: `Failed to initiate bundle payment: ${errorMessage}`,
         variant: "destructive",
       });
     }
