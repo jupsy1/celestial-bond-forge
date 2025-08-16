@@ -162,16 +162,72 @@ const Dashboard = () => {
       description: "Get detailed predictions for the week ahead",
       price: "£4.99",
       icon: Calendar,
-      discount: "25% off"
+      discount: "25% off",
+      serviceId: "weekly-love-forecast"
     },
     {
       title: "Birth Chart Compatibility",
       description: "Deep dive into astrological matching",
       price: "£4.99",
       icon: Star,
-      popular: true
+      popular: true,
+      serviceId: "birth-chart-compatibility"
     }
   ]);
+
+  const handleServicePayment = async (service: any) => {
+    console.log('Starting payment for service:', service.title);
+    
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to purchase services",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Convert price to pence for Stripe
+      const priceMatch = service.price.match(/[\d.]+/);
+      const priceInPence = priceMatch ? Math.round(parseFloat(priceMatch[0]) * 100) : 499;
+      
+      console.log('Service payment details:', { 
+        serviceId: service.serviceId, 
+        amount: priceInPence, 
+        title: service.title 
+      });
+
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          serviceId: service.serviceId,
+          amount: priceInPence,
+          credits: 0
+        }
+      });
+
+      console.log('create-payment response:', { data, error });
+      
+      if (error) {
+        console.error('Payment error details:', error);
+        throw new Error(error.message || 'Failed to create payment session');
+      }
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      } else {
+        throw new Error('No payment URL received');
+      }
+    } catch (error) {
+      console.error('Service payment error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast({
+        title: "Payment Error",
+        description: `Failed to initiate payment: ${errorMessage}`,
+        variant: "destructive",
+      });
+    }
+  };
 
   const refreshHoroscope = () => {
     console.log("Refreshing horoscope...");
@@ -587,7 +643,11 @@ const Dashboard = () => {
                           </div>
                         </div>
                         
-                        <Button size="sm" className="cosmic-button w-full">
+                        <Button 
+                          size="sm" 
+                          className="cosmic-button w-full"
+                          onClick={() => handleServicePayment(service)}
+                        >
                           Get Reading
                         </Button>
                       </div>
