@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -33,6 +33,10 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedReading, setSelectedReading] = useState<any>(null);
   const [activeService, setActiveService] = useState<string>('horoscope');
+
+  // Debug logging
+  console.log('Dashboard: user state', { user: !!user, userId: user?.id, email: user?.email });
+  console.log('Dashboard: session state', { session: !!session, accessToken: !!session?.access_token });
 
   const [userProfile, setUserProfile] = useState({
     name: user?.user_metadata?.display_name || "Cosmic Explorer",
@@ -176,9 +180,13 @@ const Dashboard = () => {
   ]);
 
   const handleServicePayment = async (service: any) => {
+    console.log('=== PAYMENT DEBUG START ===');
     console.log('Starting payment for service:', service.title);
+    console.log('User state:', { user: !!user, userId: user?.id, email: user?.email });
+    console.log('Session state:', { session: !!session, accessToken: !!session?.access_token });
     
     if (!user) {
+      console.log('ERROR: User not found, showing auth required toast');
       toast({
         title: "Authentication Required",
         description: "Please log in to purchase services",
@@ -195,9 +203,11 @@ const Dashboard = () => {
       console.log('Service payment details:', { 
         serviceId: service.serviceId, 
         amount: priceInPence, 
-        title: service.title 
+        title: service.title,
+        userEmail: user.email
       });
 
+      console.log('About to invoke create-payment function...');
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
           serviceId: service.serviceId,
@@ -206,7 +216,7 @@ const Dashboard = () => {
         }
       });
 
-      console.log('create-payment response:', { data, error });
+      console.log('create-payment response received:', { data, error, hasData: !!data, hasError: !!error });
       
       if (error) {
         console.error('Payment error details:', error);
@@ -646,7 +656,12 @@ const Dashboard = () => {
                         <Button 
                           size="sm" 
                           className="cosmic-button w-full"
-                          onClick={() => handleServicePayment(service)}
+                          onClick={(e) => {
+                            console.log('=== BUTTON CLICKED ===');
+                            console.log('Button click event:', e);
+                            console.log('Service object:', service);
+                            handleServicePayment(service);
+                          }}
                         >
                           Get Reading
                         </Button>

@@ -181,9 +181,12 @@ const Services = () => {
   };
 
   const handleBundleSelect = async (bundle: any) => {
+    console.log('=== BUNDLE PAYMENT DEBUG START ===');
     console.log('Selected bundle:', bundle.title);
+    console.log('User state:', { user: !!user, userId: user?.id, email: user?.email });
     
     if (!user) {
+      console.log('ERROR: User not found for bundle payment');
       toast({
         title: "Authentication Required",
         description: "Please log in to purchase bundles",
@@ -527,7 +530,12 @@ const Services = () => {
                     
                     <Button 
                       className="cosmic-button w-full"
-                      onClick={() => handleBundleSelect(bundle)}
+                      onClick={(e) => {
+                        console.log('=== BUNDLE BUTTON CLICKED ===');
+                        console.log('Bundle click event:', e);
+                        console.log('Bundle object:', bundle);
+                        handleBundleSelect(bundle);
+                      }}
                     >
                       Get Bundle Deal
                     </Button>
