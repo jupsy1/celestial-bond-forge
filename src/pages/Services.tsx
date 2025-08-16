@@ -139,8 +139,7 @@ const Services = () => {
         // Handle subscription services
         const { data, error } = await supabase.functions.invoke('create-checkout', {
           body: { 
-            plan: service.title.toLowerCase().includes("unlimited") ? "premium" : "basic",
-            priceId: service.stripe_price_id // You'll need to add this to your services
+            plan: service.title.toLowerCase().includes("unlimited") ? "premium" : "basic"
           }
         });
         
@@ -176,6 +175,61 @@ const Services = () => {
       toast({
         title: "Payment Error",
         description: "Failed to initiate payment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBundleSelect = async (bundle: any) => {
+    console.log('Selected bundle:', bundle.title);
+    
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to purchase bundles",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Convert bundle price to pence for Stripe
+      const priceMatch = bundle.price.match(/[\d.]+/);
+      const priceInPence = priceMatch ? Math.round(parseFloat(priceMatch[0]) * 100) : 1999; // Default to £19.99
+      
+      console.log('Bundle price:', bundle.price, 'Converted to pence:', priceInPence);
+
+      // Check if it's a subscription bundle
+      const isSubscription = bundle.badge === "per month" || bundle.title.toLowerCase().includes("monthly");
+      
+      if (isSubscription) {
+        // Handle subscription bundles
+        const { data, error } = await supabase.functions.invoke('create-checkout', {
+          body: { 
+            plan: "premium" // Bundles are typically premium
+          }
+        });
+        
+        if (error) throw error;
+        window.open(data.url, '_blank');
+      } else {
+        // Handle one-time bundle payments
+        const { data, error } = await supabase.functions.invoke('create-payment', {
+          body: {
+            serviceId: `bundle-${bundle.title.toLowerCase().replace(/\s+/g, '-')}`,
+            amount: priceInPence,
+            credits: 0
+          }
+        });
+        
+        if (error) throw error;
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Bundle payment error:', error);
+      toast({
+        title: "Payment Error",
+        description: "Failed to initiate bundle payment. Please try again.",
         variant: "destructive",
       });
     }
@@ -460,7 +514,10 @@ const Services = () => {
                       </Badge>
                     </div>
                     
-                    <Button className="cosmic-button w-full">
+                    <Button 
+                      className="cosmic-button w-full"
+                      onClick={() => handleBundleSelect(bundle)}
+                    >
                       Get Bundle Deal
                     </Button>
                   </div>
