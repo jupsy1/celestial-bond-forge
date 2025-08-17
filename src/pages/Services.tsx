@@ -296,6 +296,23 @@ const Services = () => {
 
   return (
     <div className="min-h-screen">
+      {/* Debug mobile touch test */}
+      <div 
+        style={{
+          position: 'fixed',
+          top: '10px',
+          left: '10px',
+          zIndex: 9999,
+          background: 'red',
+          color: 'white',
+          padding: '10px',
+          fontSize: '12px'
+        }}
+        onClick={() => alert('MOBILE TEST: JavaScript is working!')}
+        onTouchEnd={() => alert('MOBILE TEST: Touch events working!')}
+      >
+        TAP TO TEST MOBILE
+      </div>
       <Header />
       
       <main className="py-20">
