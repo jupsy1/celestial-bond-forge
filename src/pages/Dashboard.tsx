@@ -224,7 +224,13 @@ const Dashboard = () => {
       }
 
       if (data?.url) {
-        window.open(data.url, '_blank');
+        // Mobile-friendly payment handling
+        const isMobile = window.innerWidth < 768;
+        if (isMobile) {
+          window.location.href = data.url;
+        } else {
+          window.open(data.url, '_blank');
+        }
       } else {
         throw new Error('No payment URL received');
       }
@@ -662,7 +668,13 @@ const Dashboard = () => {
 
                           if (data?.url) {
                             console.log('Opening checkout URL:', data.url);
-                            window.open(data.url, '_blank');
+                            // Mobile-friendly payment handling
+                            const isMobile = window.innerWidth < 768;
+                            if (isMobile) {
+                              window.location.href = data.url;
+                            } else {
+                              window.open(data.url, '_blank');
+                            }
                           } else {
                             throw new Error('No checkout URL received');
                           }

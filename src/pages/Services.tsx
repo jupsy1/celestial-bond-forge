@@ -8,10 +8,12 @@ import { Heart, Star, Sparkles, Moon, Calendar, Users, Zap, Crown, Gift } from "
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Services = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [filter, setFilter] = useState<"all" | "free" | "premium">("all");
   const [services, setServices] = useState<any[]>([]);
   const [allServices, setAllServices] = useState<any[]>([]); // Store all services for counting
@@ -144,7 +146,12 @@ const Services = () => {
         });
         
         if (error) throw error;
-        window.open(data.url, '_blank');
+        // Mobile-friendly payment handling
+        if (isMobile) {
+          window.location.href = data.url;
+        } else {
+          window.open(data.url, '_blank');
+        }
       } else {
         // Handle one-time payments - convert £ prices to pence for Stripe
         let priceInPence;
@@ -168,7 +175,12 @@ const Services = () => {
         });
         
         if (error) throw error;
-        window.open(data.url, '_blank');
+        // Mobile-friendly payment handling
+        if (isMobile) {
+          window.location.href = data.url;
+        } else {
+          window.open(data.url, '_blank');
+        }
       }
     } catch (error) {
       console.error('Payment error:', error);
@@ -219,7 +231,12 @@ const Services = () => {
           console.error('create-checkout error details:', error);
           throw new Error(error.message || 'Failed to create checkout session');
         }
-        window.open(data.url, '_blank');
+        // Mobile-friendly payment handling
+        if (isMobile) {
+          window.location.href = data.url;
+        } else {
+          window.open(data.url, '_blank');
+        }
       } else {
         // Handle one-time bundle payments
         console.log('Calling create-payment for one-time bundle');
@@ -236,7 +253,12 @@ const Services = () => {
           console.error('create-payment error details:', error);
           throw new Error(error.message || 'Failed to create payment session');
         }
-        window.open(data.url, '_blank');
+        // Mobile-friendly payment handling
+        if (isMobile) {
+          window.location.href = data.url;
+        } else {
+          window.open(data.url, '_blank');
+        }
       }
     } catch (error) {
       console.error('Bundle payment error:', error);
