@@ -84,6 +84,36 @@ export function ServiceCard({
         </ul>
       </div>
 
+      {/* Simple test button without cosmic styling */}
+      <button
+        style={{
+          width: '100%',
+          padding: '12px',
+          backgroundColor: '#6366f1',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          fontSize: '16px',
+          cursor: 'pointer',
+          touchAction: 'manipulation'
+        }}
+        onClick={(e) => {
+          alert(`SIMPLE BUTTON CLICKED: ${title}`);
+          console.log('=== SIMPLE SERVICE BUTTON CLICKED ===');
+          console.log('Service:', title);
+          onSelect();
+        }}
+        onTouchEnd={(e) => {
+          alert(`SIMPLE BUTTON TOUCHED: ${title}`);
+          console.log('=== SIMPLE SERVICE BUTTON TOUCHED ===');
+          e.preventDefault();
+          onSelect();
+        }}
+      >
+        {isFree ? "Try Free Now" : type === "subscription" ? "Start Subscription" : "Get Reading"}
+      </button>
+      
+      {/* Original Button (keep for comparison) */}
       <Button 
         onClick={(e) => {
           console.log('=== SERVICE CARD BUTTON CLICKED ===');
@@ -106,7 +136,7 @@ export function ServiceCard({
           e.stopPropagation();
           onSelect();
         }}
-        className={`w-full ${isFree ? 'cosmic-button' : 'cosmic-button'} touch-manipulation`}
+        className={`w-full ${isFree ? 'cosmic-button' : 'cosmic-button'} touch-manipulation mt-2`}
         style={{ 
           touchAction: 'manipulation',
           userSelect: 'none',
@@ -114,7 +144,7 @@ export function ServiceCard({
           WebkitTouchCallout: 'none'
         }}
       >
-        {isFree ? "Try Free Now" : type === "subscription" ? "Start Subscription" : "Get Reading"}
+        ORIGINAL: {isFree ? "Try Free Now" : type === "subscription" ? "Start Subscription" : "Get Reading"}
       </Button>
     </div>
   );
