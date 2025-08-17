@@ -137,23 +137,35 @@ const Services = () => {
     const isSubscription = service.badge === "per month" || service.title.toLowerCase().includes("monthly");
     
     try {
+      console.log('=== PAYMENT FLOW DEBUG ===');
+      console.log('isMobile:', isMobile);
+      console.log('Service:', service.title);
+      console.log('IsSubscription:', isSubscription);
+      
       if (isSubscription) {
         // Handle subscription services
+        console.log('Processing subscription payment...');
         const { data, error } = await supabase.functions.invoke('create-checkout', {
           body: { 
             plan: service.title.toLowerCase().includes("unlimited") ? "premium" : "basic"
           }
         });
         
+        console.log('Subscription response:', { data, error });
         if (error) throw error;
+        
         // Mobile-friendly payment handling
+        console.log('Redirecting to payment...', data.url);
         if (isMobile) {
+          console.log('Using mobile redirect');
           window.location.href = data.url;
         } else {
+          console.log('Using desktop new tab');
           window.open(data.url, '_blank');
         }
       } else {
         // Handle one-time payments - convert £ prices to pence for Stripe
+        console.log('Processing one-time payment...');
         let priceInPence;
         
         // Extract numeric value from price string and convert to pence
@@ -174,16 +186,24 @@ const Services = () => {
           }
         });
         
+        console.log('One-time payment response:', { data, error });
         if (error) throw error;
+        
         // Mobile-friendly payment handling
+        console.log('Redirecting to payment...', data.url);
         if (isMobile) {
+          console.log('Using mobile redirect');
           window.location.href = data.url;
         } else {
+          console.log('Using desktop new tab');
           window.open(data.url, '_blank');
         }
       }
     } catch (error) {
-      console.error('Payment error:', error);
+      console.error('=== PAYMENT ERROR ===');
+      console.error('Error details:', error);
+      console.error('isMobile:', isMobile);
+      console.error('service:', service);
       toast({
         title: "Payment Error",
         description: "Failed to initiate payment. Please try again.",
