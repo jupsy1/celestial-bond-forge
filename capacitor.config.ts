@@ -5,8 +5,8 @@ const config: CapacitorConfig = {
   appName: 'celestial-bond-forge',
   webDir: 'dist',
   server: {
-    url: 'https://24f29d05-cb86-4391-871d-0dd49625b4fb.lovableproject.com?forceHideBadge=true',
-    cleartext: true
+    url: 'https://www.starsignstudio.com',  // 👈 your live domain
+    cleartext: false
   },
   plugins: {
     SplashScreen: {
