@@ -574,12 +574,29 @@ const Services = () => {
                     </div>
                     
                     <Button 
-                      className="cosmic-button w-full"
+                      className="cosmic-button w-full touch-manipulation"
+                      style={{ 
+                        touchAction: 'manipulation',
+                        userSelect: 'none',
+                        WebkitUserSelect: 'none',
+                        WebkitTouchCallout: 'none'
+                      }}
                       onClick={(e) => {
                         console.log('=== BUNDLE BUTTON CLICK EVENT ===');
                         console.log('Click event fired for bundle:', bundle.title);
                         console.log('Event object:', e);
                         console.log('Button element:', e.currentTarget);
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleBundleSelect(bundle);
+                      }}
+                      onTouchStart={(e) => {
+                        console.log('=== BUNDLE TOUCH START ===');
+                        console.log('Touch start for bundle:', bundle.title);
+                      }}
+                      onTouchEnd={(e) => {
+                        console.log('=== BUNDLE TOUCH END ===');
+                        console.log('Touch end for bundle:', bundle.title);
                         e.preventDefault();
                         e.stopPropagation();
                         handleBundleSelect(bundle);

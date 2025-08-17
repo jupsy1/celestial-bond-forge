@@ -95,7 +95,24 @@ export function ServiceCard({
           e.stopPropagation();
           onSelect();
         }}
-        className={`w-full ${isFree ? 'cosmic-button' : 'cosmic-button'}`}
+        onTouchStart={(e) => {
+          console.log('=== SERVICE CARD TOUCH START ===');
+          console.log('Touch event for:', title);
+        }}
+        onTouchEnd={(e) => {
+          console.log('=== SERVICE CARD TOUCH END ===');
+          console.log('Touch end for:', title);
+          e.preventDefault();
+          e.stopPropagation();
+          onSelect();
+        }}
+        className={`w-full ${isFree ? 'cosmic-button' : 'cosmic-button'} touch-manipulation`}
+        style={{ 
+          touchAction: 'manipulation',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none'
+        }}
       >
         {isFree ? "Try Free Now" : type === "subscription" ? "Start Subscription" : "Get Reading"}
       </Button>
