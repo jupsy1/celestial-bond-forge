@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, Star, Sparkles, Moon, Calendar, Users, Zap, Crown, Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Services = () => {
@@ -101,9 +101,12 @@ const Services = () => {
   ];
 
   const handleServiceSelect = async (service: any) => {
-    console.log('Selected service:', service.title);
+    console.log('=== BUTTON CLICKED ===');
+    console.log('Service button clicked:', service.title);
+    console.log('User state:', !!user);
     
     if (!user) {
+      console.log('User not logged in, showing auth toast');
       toast({
         title: "Authentication Required",
         description: "Please log in to purchase services",
@@ -213,12 +216,12 @@ const Services = () => {
   };
 
   const handleBundleSelect = async (bundle: any) => {
-    console.log('=== BUNDLE PAYMENT DEBUG START ===');
-    console.log('Selected bundle:', bundle.title);
-    console.log('User state:', { user: !!user, userId: user?.id, email: user?.email });
+    console.log('=== BUNDLE BUTTON CLICKED ===');
+    console.log('Bundle button clicked:', bundle.title);
+    console.log('User state:', !!user);
     
     if (!user) {
-      console.log('ERROR: User not found for bundle payment');
+      console.log('User not logged in for bundle, showing auth toast');
       toast({
         title: "Authentication Required",
         description: "Please log in to purchase bundles",
@@ -573,9 +576,12 @@ const Services = () => {
                     <Button 
                       className="cosmic-button w-full"
                       onClick={(e) => {
-                        console.log('=== BUNDLE BUTTON CLICKED ===');
-                        console.log('Bundle click event:', e);
-                        console.log('Bundle object:', bundle);
+                        console.log('=== BUNDLE BUTTON CLICK EVENT ===');
+                        console.log('Click event fired for bundle:', bundle.title);
+                        console.log('Event object:', e);
+                        console.log('Button element:', e.currentTarget);
+                        e.preventDefault();
+                        e.stopPropagation();
                         handleBundleSelect(bundle);
                       }}
                     >

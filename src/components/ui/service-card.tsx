@@ -85,7 +85,16 @@ export function ServiceCard({
       </div>
 
       <Button 
-        onClick={onSelect}
+        onClick={(e) => {
+          console.log('=== SERVICE CARD BUTTON CLICKED ===');
+          console.log('Service card button clicked for:', title);
+          console.log('Button click event:', e);
+          console.log('Is free service:', isFree);
+          console.log('Service type:', type);
+          e.preventDefault();
+          e.stopPropagation();
+          onSelect();
+        }}
         className={`w-full ${isFree ? 'cosmic-button' : 'cosmic-button'}`}
       >
         {isFree ? "Try Free Now" : type === "subscription" ? "Start Subscription" : "Get Reading"}
