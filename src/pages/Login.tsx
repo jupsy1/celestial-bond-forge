@@ -9,13 +9,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, cleanupAuthState } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
-// ✅ Detect only Pinterest + YouTube in-app browsers
-function isPinterestOrYouTube(
+/** Detect only Pinterest or YouTube in-app browsers and return which one */
+function detectInAppSource(
   ua: string = navigator.userAgent || "",
   ref: string = document.referrer || ""
-): boolean {
-  return /\b(Pinterest|Pinner|YouTube)\b/i.test(ua) 
-    || /(pinterest\.com|youtube\.com)/i.test(ref);
+): "pinterest" | "youtube" | null {
+  if (/\b(Pinterest|Pinner)\b/i.test(ua) || /pinterest\.com/i.test(ref)) {
+    return "pinterest";
+  }
+  if (/\b(YouTube)\b/i.test(ua) || /youtube\.com/i.test(ref)) {
+    return "youtube";
+  }
+  return null;
 }
 
 const Login = () => {
@@ -39,13 +44,15 @@ const Login = () => {
     setIsLoading(true);
 
     try {
+      // Clean up existing state
       cleanupAuthState();
       try {
         await supabase.auth.signOut({ scope: "global" });
-      } catch (err) {
-        // ignore
+      } catch {
+        /* ignore */
       }
 
+      // Email/password sign-in
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -58,12 +65,13 @@ const Login = () => {
           title: "Welcome back!",
           description: "You've been signed in successfully.",
         });
+        // Force page reload for clean state
         window.location.href = "/dashboard";
       }
     } catch (error: any) {
       toast({
         title: "Sign in failed",
-        description: error.message || "Please check your credentials and try again.",
+        description: error?.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     } finally {
@@ -124,8 +132,9 @@ const Login = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -173,9 +182,16 @@ const Login = () => {
                 variant="outline"
                 className="cosmic-card border-primary/30"
                 onClick={async () => {
-                  if (isPinterestOrYouTube()) {
+                  const app = detectInAppSource();
+                  if (app === "pinterest") {
                     alert(
-                      "Google sign-in isn’t supported inside Pinterest or YouTube’s in-app browser. Please open in Safari/Chrome."
+                      "Google sign-in isn’t supported inside Pinterest’s in-app browser. Please open in Safari/Chrome."
+                    );
+                    return;
+                  }
+                  if (app === "youtube") {
+                    alert(
+                      "Google sign-in isn’t supported inside YouTube’s in-app browser. Please open in Safari/Chrome."
                     );
                     return;
                   }
@@ -184,9 +200,7 @@ const Login = () => {
                     console.log("Starting Google OAuth...");
                     const { data, error } = await supabase.auth.signInWithOAuth({
                       provider: "google",
-                      options: {
-                        redirectTo: `${window.location.origin}/dashboard`,
-                      },
+                      options: { redirectTo: `${window.location.origin}/dashboard` },
                     });
                     console.log("OAuth response:", { data, error });
                     if (error) {
@@ -198,8 +212,7 @@ const Login = () => {
                     toast({
                       title: "Google sign in failed",
                       description:
-                        error.message ||
-                        "Please check Supabase OAuth configuration.",
+                        error?.message || "Please check Supabase OAuth configuration.",
                       variant: "destructive",
                     });
                   }
@@ -213,9 +226,16 @@ const Login = () => {
                 variant="outline"
                 className="cosmic-card border-primary/30"
                 onClick={async () => {
-                  if (isPinterestOrYouTube()) {
+                  const app = detectInAppSource();
+                  if (app === "pinterest") {
                     alert(
-                      "Facebook sign-in isn’t supported inside Pinterest or YouTube’s in-app browser. Please open in Safari/Chrome."
+                      "Facebook sign-in isn’t supported inside Pinterest’s in-app browser. Please open in Safari/Chrome."
+                    );
+                    return;
+                  }
+                  if (app === "youtube") {
+                    alert(
+                      "Facebook sign-in isn’t supported inside YouTube’s in-app browser. Please open in Safari/Chrome."
                     );
                     return;
                   }
@@ -223,16 +243,13 @@ const Login = () => {
                   try {
                     const { error } = await supabase.auth.signInWithOAuth({
                       provider: "facebook",
-                      options: {
-                        redirectTo: `${window.location.origin}/dashboard`,
-                      },
+                      options: { redirectTo: `${window.location.origin}/dashboard` },
                     });
                     if (error) throw error;
                   } catch (error: any) {
                     toast({
                       title: "Facebook sign in failed",
-                      description:
-                        "Please try again or use email/password.",
+                      description: "Please try again or use email/password.",
                       variant: "destructive",
                     });
                   }
