@@ -1,53 +1,21 @@
-// src/utils/inAppDetector.ts
-export type InAppApp = "tiktok" | "youtube" | "pinterest" | "instagram" | "facebook" | "gsa" | "android_webview";
+import { useEffect, useState } from "react";
+import { detectInAppBrowser, inAppPrettyName, inAppHelpMessage } from "@/utils/inAppDetector";
 
-/** Robust in-app detection (UA + common hints). */
-export function detectInAppBrowser(ua: string = navigator.userAgent || ""): InAppApp | null {
-  const U = ua.toLowerCase();
+const InAppWarning = () => {
+  const [inApp, setInApp] = useState<ReturnType<typeof detectInAppBrowser>>(null);
 
-  if (U.includes("tiktok") || U.includes("ttwebview") || U.includes("musically")) return "tiktok";
-  if (U.includes("instagram") || U.includes(" ig ") || U.includes("ig/")) return "instagram";
-  if (U.includes("fban") || U.includes("fbav") || U.includes("fb_iab")) return "facebook";
-  if (U.includes("pinterest")) return "pinterest";
-  if (U.includes("youtube")) return "youtube";
-  if (U.includes("gsa")) return "gsa"; // Google Search App
+  useEffect(() => {
+    setInApp(detectInAppBrowser());
+  }, []);
 
-  // Generic Android webview hint — many in-app browsers use this
-  if (U.includes("; wv;")) return "android_webview";
+  if (!inApp) return null;
 
-  return null;
-}
+  return (
+    <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-100 mb-4">
+      You’re viewing this inside <b>{inAppPrettyName(inApp)}</b>’s in-app browser.{" "}
+      {inAppHelpMessage(inApp)}
+    </div>
+  );
+};
 
-export function inAppPrettyName(app: InAppApp | null): string {
-  switch (app) {
-    case "tiktok": return "TikTok";
-    case "instagram": return "Instagram";
-    case "facebook": return "Facebook";
-    case "pinterest": return "Pinterest";
-    case "youtube": return "YouTube";
-    case "gsa": return "Google app";
-    case "android_webview": return "this in-app browser";
-    default: return "this app";
-  }
-}
-
-export function inAppHelpMessage(app: InAppApp | null): string {
-  switch (app) {
-    case "tiktok":
-      return "Google sign-in doesn’t work in TikTok’s browser. Tap the ••• menu and choose “Open in Safari/Chrome”.";
-    case "instagram":
-      return "Google sign-in doesn’t work in Instagram’s browser. Open this page in Safari or Chrome.";
-    case "facebook":
-      return "Google sign-in doesn’t work in Facebook’s browser. Open this page in Safari or Chrome.";
-    case "pinterest":
-      return "Google sign-in doesn’t work in Pinterest’s browser. Open this page in Safari or Chrome.";
-    case "youtube":
-      return "Google sign-in may be blocked in YouTube’s in-app browser. Open this page in Safari or Chrome.";
-    case "gsa":
-      return "Google sign-in may be blocked in the Google app’s browser. Open this page in Safari or Chrome.";
-    case "android_webview":
-      return "Google sign-in is blocked in this in-app browser. Open this page in Safari or Chrome.";
-    default:
-      return "Open this page in Safari (iPhone) or Chrome (Android) to continue with Google.";
-  }
-}
+export default InAppWarning;
