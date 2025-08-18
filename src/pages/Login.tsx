@@ -15,12 +15,19 @@ declare global {
   }
 }
 
-// Detect if user is inside Pinterest, YouTube, TikTok, or Facebook app browsers
-function detectInAppBrowser(ua: string = navigator.userAgent || "") {
+// Detect common in-app browsers that block Google OAuth
+function detectInAppBrowser(ua: string = navigator.userAgent || ""):
+  | "pinterest"
+  | "youtube"
+  | "tiktok"
+  | "facebook"
+  | "instagram"
+  | null {
   if (/Pinterest/i.test(ua)) return "pinterest";
   if (/YouTube|GSA/i.test(ua)) return "youtube";
   if (/TikTok/i.test(ua)) return "tiktok";
-  if (/FBAN|FBAV|FB_IAB|Instagram/i.test(ua)) return "facebook";
+  if (/FBAN|FBAV|FB_IAB/i.test(ua)) return "facebook";
+  if (/Instagram|IG/i.test(ua)) return "instagram";
   return null;
 }
 
@@ -29,6 +36,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [inApp, setInApp] = useState<ReturnType<typeof detectInAppBrowser>>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -40,14 +48,64 @@ const Login = () => {
     }
   }, [user, navigate]);
 
-  // Load Google Identity Services script
+  // Decide if we're in a blocked in-app browser
   useEffect(() => {
+    setInApp(detectInAppBrowser());
+  }, []);
+
+  // Load Google Identity Services and render the official button
+  useEffect(() => {
+    if (inApp) return; // don't load GIS inside blocked webviews
+
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
     script.defer = true;
+    script.onload = () => {
+      if (!window.google) return;
+
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        callback: async (response: any) => {
+          try {
+            const idToken = response?.credential;
+            if (!idToken) return;
+
+            const { error } = await supabase.auth.signInWithIdToken({
+              provider: "google",
+              token: idToken,
+            });
+            if (error) throw error;
+
+            window.location.href = "/dashboard";
+          } catch (err: any) {
+            console.error("GIS sign-in error:", err);
+            toast({
+              title: "Google sign in failed",
+              description: err?.message || "Please try again.",
+              variant: "destructive",
+            });
+          }
+        },
+      });
+
+      const container = document.getElementById("google-signin-container");
+      if (container) {
+        window.google.accounts.id.renderButton(container, {
+          theme: "outline",
+          size: "large",
+          width: "100%",
+          shape: "rectangular",
+          logo_alignment: "left",
+          text: "signin_with",
+        });
+      }
+      // If you want One Tap as well, you can uncomment:
+      // window.google.accounts.id.prompt();
+    };
+
     document.body.appendChild(script);
-  }, []);
+  }, [inApp, toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +115,7 @@ const Login = () => {
       cleanupAuthState();
       try {
         await supabase.auth.signOut({ scope: "global" });
-      } catch (err) {}
+      } catch {}
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -76,8 +134,7 @@ const Login = () => {
     } catch (error: any) {
       toast({
         title: "Sign in failed",
-        description:
-          error.message || "Please check your credentials and try again.",
+        description: error?.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     } finally {
@@ -85,59 +142,30 @@ const Login = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    const inApp = detectInAppBrowser();
-    if (inApp === "pinterest") {
-      alert("Google sign-in isn’t supported inside Pinterest’s browser. Please open in Safari or Chrome.");
-      return;
-    }
-    if (inApp === "youtube") {
-      alert("Google sign-in isn’t supported inside YouTube’s browser. Please open in Safari or Chrome.");
-      return;
-    }
-    if (inApp === "tiktok") {
-      alert("Google sign-in isn’t supported inside TikTok’s browser. Please open in Safari or Chrome.");
-      return;
-    }
-    if (inApp === "facebook") {
-      alert("Google sign-in isn’t supported inside Facebook or Instagram browsers. Please open in Safari or Chrome.");
-      return;
-    }
-
-    // Initialize GIS
-    window.google.accounts.id.initialize({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      callback: async (response: any) => {
-        const { credential } = response;
-        if (!credential) return;
-
-        // Pass ID token to Supabase
-        const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: "google",
-          token: credential,
-        });
-
-        if (error) {
-          console.error("Supabase login error:", error.message);
-          toast({
-            title: "Google sign in failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else {
-          console.log("Logged in:", data);
-          window.location.href = "/dashboard";
-        }
-      },
-    });
-
-    // Trigger Google popup
-    window.google.accounts.id.prompt();
-  };
+  // Copy for in-app browsers
+  const inAppMessage =
+    inApp === "pinterest"
+      ? "You're in Pinterest’s in-app browser. Google sign-in is blocked there. Tap ••• and choose Open in Safari/Chrome."
+      : inApp === "youtube"
+      ? "You're in YouTube’s in-app browser. Google sign-in is blocked there. Use the share/menu to Open in Safari/Chrome."
+      : inApp === "tiktok"
+      ? "You're in TikTok’s in-app browser. Google sign-in is blocked there. Tap ••• and choose Open in Safari/Chrome."
+      : inApp === "facebook"
+      ? "You're in Facebook’s in-app browser. Google sign-in is blocked there. Tap ••• and open in Safari/Chrome."
+      : inApp === "instagram"
+      ? "You're in Instagram’s in-app browser. Google sign-in is blocked there. Tap ••• and open in Safari/Chrome."
+      : "";
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 starfield-bg">
       <div className="w-full max-w-md space-y-8">
+        {/* In-app warning (if applicable) */}
+        {inApp && (
+          <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-200">
+            {inAppMessage}
+          </div>
+        )}
+
         {/* Logo */}
         <div className="text-center">
           <Link to="/" className="inline-flex items-center space-x-2 mb-8">
@@ -184,8 +212,9 @@ const Login = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -203,11 +232,7 @@ const Login = () => {
               </Link>
             </div>
 
-            <Button 
-              type="submit" 
-              className="cosmic-button w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="cosmic-button w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
@@ -223,14 +248,14 @@ const Login = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Button
-                variant="outline"
-                className="cosmic-card border-primary/30"
-                onClick={handleGoogleLogin}
-              >
-                Google
-              </Button>
+              {/* Left column: Official Google button goes here (renders after script loads) */}
+              <div
+                id="google-signin-container"
+                className={`cosmic-card border border-primary/30 rounded-md p-2 ${inApp ? "opacity-50 pointer-events-none" : ""}`}
+                aria-disabled={!!inApp}
+              />
 
+              {/* Right column: Facebook (kept as OAuth redirect) */}
               <Button
                 variant="outline"
                 className="cosmic-card border-primary/30"
