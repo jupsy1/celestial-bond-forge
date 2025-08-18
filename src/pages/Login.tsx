@@ -84,7 +84,6 @@ const Login = () => {
         const { credential } = response;
         if (!credential) return;
 
-        // Pass ID token to Supabase
         const { data, error } = await supabase.auth.signInWithIdToken({
           provider: "google",
           token: credential,
@@ -104,14 +103,31 @@ const Login = () => {
       },
     });
 
-    // Trigger Google popup
     window.google.accounts.id.prompt();
+  };
+
+  const handleOAuthLogin = async (
+    provider: "facebook" | "instagram" | "apple" | "github"
+  ) => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: `${window.location.origin}/dashboard` },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: `${provider.charAt(0).toUpperCase() + provider.slice(1)} sign in failed`,
+        description: "Please try again or use another method.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 starfield-bg">
       <div className="w-full max-w-md space-y-8">
-        {/* Warning for in-app browsers */}
+        {/* In-app browser warning */}
         <InAppWarning />
 
         {/* Logo */}
@@ -131,10 +147,11 @@ const Login = () => {
               Welcome Back
             </h1>
             <p className="text-muted-foreground">
-              Sign in to continue your cosmic journey
+              Sign in to continue your cosmic journey 🌌
             </p>
           </div>
 
+          {/* Email/password login */}
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
@@ -201,6 +218,7 @@ const Login = () => {
             </Button>
           </form>
 
+          {/* Social login */}
           <div className="text-center space-y-4">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -213,39 +231,44 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <Button
-                variant="outline"
-                className="cosmic-card border-primary/30"
+                className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-100"
                 onClick={handleGoogleLogin}
               >
-                Google
+                🌐 Google
               </Button>
-
               <Button
-                variant="outline"
-                className="cosmic-card border-primary/30"
-                onClick={async () => {
-                  try {
-                    const { error } = await supabase.auth.signInWithOAuth({
-                      provider: "facebook",
-                      options: { redirectTo: `${window.location.origin}/dashboard` },
-                    });
-                    if (error) throw error;
-                  } catch (error: any) {
-                    toast({
-                      title: "Facebook sign in failed",
-                      description: "Please try again or use email/password.",
-                      variant: "destructive",
-                    });
-                  }
-                }}
+                className="w-full bg-[#1877F2] text-white hover:bg-[#166FE0]"
+                onClick={() => handleOAuthLogin("facebook")}
               >
-                Facebook
+                📘 Facebook
+              </Button>
+              <Button
+                className="w-full text-white"
+                style={{
+                  background:
+                    "linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
+                }}
+                onClick={() => handleOAuthLogin("instagram")}
+              >
+                📸 Instagram
+              </Button>
+              <Button
+                className="w-full bg-black text-white hover:bg-gray-800"
+                onClick={() => handleOAuthLogin("apple")}
+              >
+                 Apple
+              </Button>
+              <Button
+                className="w-full bg-gray-800 text-white hover:bg-gray-700 col-span-2"
+                onClick={() => handleOAuthLogin("github")}
+              >
+                🐙 GitHub
               </Button>
             </div>
 
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mt-4">
               Don&apos;t have an account?{" "}
               <Link
                 to="/signup"
@@ -253,6 +276,9 @@ const Login = () => {
               >
                 Sign up free
               </Link>
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              🔒 Your data is safe with <b>Star Sign Studio</b>
             </p>
           </div>
         </Card>
