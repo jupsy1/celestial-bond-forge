@@ -1,3 +1,4 @@
+// src/components/InAppWarning.tsx
 import { useEffect, useState } from "react";
 import { detectInAppBrowser, inAppPrettyName, inAppHelpMessage } from "@/utils/inAppDetector";
 
