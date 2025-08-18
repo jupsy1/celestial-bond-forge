@@ -1,3 +1,4 @@
+// src/pages/Login.tsx
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +16,13 @@ declare global {
   }
 }
 
-// Detect if user is inside Pinterest or YouTube app
+// Detect in-app browsers that break Google OAuth
 function detectInAppBrowser(ua: string = navigator.userAgent || "") {
   if (/Pinterest/i.test(ua)) return "pinterest";
   if (/YouTube|GSA/i.test(ua)) return "youtube";
+  if (/FBAN|FBAV|FB_IAB|FBIOS/i.test(ua)) return "facebook";
+  if (/Instagram|IG/i.test(ua)) return "instagram";
+  if (/TikTok/i.test(ua)) return "tiktok";
   return null;
 }
 
@@ -31,7 +35,6 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if already logged in
   useEffect(() => {
     if (user) {
       navigate("/dashboard");
@@ -85,12 +88,15 @@ const Login = () => {
 
   const handleGoogleLogin = () => {
     const inApp = detectInAppBrowser();
-    if (inApp === "pinterest") {
-      alert("Google sign-in isn’t supported inside Pinterest’s browser. Please open in Safari or Chrome.");
-      return;
-    }
-    if (inApp === "youtube") {
-      alert("Google sign-in isn’t supported inside YouTube’s browser. Please open in Safari or Chrome.");
+    if (inApp) {
+      let msg = "Google sign-in isn’t supported inside this app’s browser. Please open in Safari or Chrome.";
+      if (inApp === "pinterest") msg = "Google sign-in isn’t supported inside Pinterest. Please open in Safari or Chrome.";
+      if (inApp === "youtube") msg = "Google sign-in isn’t supported inside YouTube. Please open in Safari or Chrome.";
+      if (inApp === "facebook") msg = "Google sign-in isn’t supported inside Facebook’s in-app browser. Please open in Safari or Chrome.";
+      if (inApp === "instagram") msg = "Google sign-in isn’t supported inside Instagram. Please open in Safari or Chrome.";
+      if (inApp === "tiktok") msg = "Google sign-in isn’t supported inside TikTok. Please open in Safari or Chrome.";
+
+      alert(msg);
       return;
     }
 
@@ -101,7 +107,6 @@ const Login = () => {
         const { credential } = response;
         if (!credential) return;
 
-        // Pass ID token to Supabase
         const { data, error } = await supabase.auth.signInWithIdToken({
           provider: "google",
           token: credential,
@@ -121,7 +126,6 @@ const Login = () => {
       },
     });
 
-    // Trigger Google popup
     window.google.accounts.id.prompt();
   };
 
@@ -141,8 +145,12 @@ const Login = () => {
         {/* Login Card */}
         <Card className="cosmic-card p-8 space-y-6">
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-display font-bold text-foreground">Welcome Back</h1>
-            <p className="text-muted-foreground">Sign in to continue your cosmic journey</p>
+            <h1 className="text-3xl font-display font-bold text-foreground">
+              Welcome Back
+            </h1>
+            <p className="text-muted-foreground">
+              Sign in to continue your cosmic journey
+            </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -188,13 +196,16 @@ const Login = () => {
                 <input type="checkbox" className="rounded border-border" />
                 <span className="text-sm text-muted-foreground">Remember me</span>
               </label>
-              <Link to="/forgot-password" className="text-sm text-primary hover:text-primary-glow">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-primary hover:text-primary-glow"
+              >
                 Forgot password?
               </Link>
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="cosmic-button w-full"
               disabled={isLoading}
             >
@@ -208,7 +219,9 @@ const Login = () => {
                 <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-card text-muted-foreground">Or continue with</span>
+                <span className="px-2 bg-card text-muted-foreground">
+                  Or continue with
+                </span>
               </div>
             </div>
 
@@ -246,7 +259,10 @@ const Login = () => {
 
             <p className="text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
-              <Link to="/signup" className="text-primary hover:text-primary-glow font-medium">
+              <Link
+                to="/signup"
+                className="text-primary hover:text-primary-glow font-medium"
+              >
                 Sign up free
               </Link>
             </p>
