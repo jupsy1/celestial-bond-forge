@@ -1,6 +1,10 @@
-// src/components/InAppWarning.tsx
 import { useEffect, useState } from "react";
-import { detectInAppBrowser, inAppPrettyName, inAppHelpMessage, type InAppApp } from "@/utils/inAppDetector";
+import {
+  detectInAppBrowser,
+  inAppPrettyName,
+  inAppHelpMessage,
+  type InAppApp,
+} from "@/utils/inAppDetector";
 
 const InAppWarning = () => {
   const [inApp, setInApp] = useState<InAppApp>(null);
