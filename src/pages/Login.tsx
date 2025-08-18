@@ -15,49 +15,13 @@ declare global {
   }
 }
 
-/** Robust in-app browser detection (covers when one app opens another) */
-function detectInAppBrowser(ua: string = navigator.userAgent || ""):
-  | "tiktok"
-  | "youtube"
-  | "pinterest"
-  | "instagram"
-  | "facebook"
-  | null {
-  const U = ua.toLowerCase();
-
-  // Primary app signatures
-  if (U.includes("tiktok") || U.includes("musically") || U.includes("ttwebview")) return "tiktok";
-  if (U.includes("instagram") || U.includes("ig")) return "instagram";
-  if (U.includes("fban") || U.includes("fbav") || U.includes("fb_iab")) return "facebook";
-  if (U.includes("pinterest")) return "pinterest";
-  if (U.includes("youtube") || U.includes("gsa")) return "youtube";
-
-  // Generic Android webview hint (often used by in-app browsers)
-  if (U.includes("; wv;")) {
-    // Heuristic: prefer TikTok if shortlink domains common to TikTok are present
-    if (document.referrer.toLowerCase().includes("tiktok")) return "tiktok";
-    return "youtube"; // fallback label if unknown but webview-y
-  }
-
+// Detect in-app browsers
+function detectInAppBrowser(ua: string = navigator.userAgent || "") {
+  if (/TikTok/i.test(ua)) return "tiktok";
+  if (/Pinterest/i.test(ua)) return "pinterest";
+  if (/YouTube|GSA/i.test(ua)) return "youtube";
+  if (/FBAN|FBAV|FB_IAB|Instagram|IG/i.test(ua)) return "facebook";
   return null;
-}
-
-/** Per-app human messages */
-function inAppMessage(app: ReturnType<typeof detectInAppBrowser>): string {
-  switch (app) {
-    case "tiktok":
-      return "Google sign-in isn’t supported inside TikTok’s in-app browser (even if it opened another page). Please open this link in Safari or Chrome.";
-    case "instagram":
-      return "Google sign-in isn’t supported inside Instagram’s in-app browser. Please open this link in Safari or Chrome.";
-    case "facebook":
-      return "Google sign-in isn’t supported inside Facebook’s in-app browser. Please open this link in Safari or Chrome.";
-    case "pinterest":
-      return "Google sign-in isn’t supported inside Pinterest’s in-app browser. Please open this link in Safari or Chrome.";
-    case "youtube":
-      return "You’re viewing this inside an embedded webview. Google sign-in may be blocked. Please open in Safari or Chrome.";
-    default:
-      return "Google sign-in isn’t supported in this in-app browser. Please open in Safari or Chrome.";
-  }
 }
 
 const Login = () => {
@@ -68,11 +32,20 @@ const Login = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [inApp, setInApp] = useState<string | null>(null);
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user) navigate("/dashboard");
+    if (user) {
+      navigate("/dashboard");
+    }
   }, [user, navigate]);
+
+  // Detect in-app browser on load
+  useEffect(() => {
+    const detected = detectInAppBrowser();
+    setInApp(detected);
+  }, []);
 
   // Load Google Identity Services script
   useEffect(() => {
@@ -93,17 +66,24 @@ const Login = () => {
         await supabase.auth.signOut({ scope: "global" });
       } catch {}
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
       if (error) throw error;
 
       if (data.user) {
-        toast({ title: "Welcome back!", description: "You've been signed in successfully." });
+        toast({
+          title: "Welcome back!",
+          description: "You've been signed in successfully.",
+        });
         window.location.href = "/dashboard";
       }
     } catch (error: any) {
       toast({
         title: "Sign in failed",
-        description: error?.message || "Please check your credentials and try again.",
+        description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     } finally {
@@ -112,22 +92,19 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    const app = detectInAppBrowser();
-    if (app) {
-      alert(inAppMessage(app));
-      return;
+    if (inApp) {
+      return; // block handled below
     }
 
-    // Initialize GIS
-    window.google?.accounts.id.initialize({
+    window.google.accounts.id.initialize({
       client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
       callback: async (response: any) => {
-        const token = response?.credential;
-        if (!token) return;
+        const { credential } = response;
+        if (!credential) return;
 
-        const { error } = await supabase.auth.signInWithIdToken({
+        const { data, error } = await supabase.auth.signInWithIdToken({
           provider: "google",
-          token,
+          token: credential,
         });
 
         if (error) {
@@ -143,9 +120,32 @@ const Login = () => {
       },
     });
 
-    // Use prompt() popup (GIS) – works in real Safari/Chrome
-    window.google?.accounts.id.prompt();
+    window.google.accounts.id.prompt();
   };
+
+  // 🚨 Show full page blocker for TikTok (and optionally Pinterest/YouTube)
+  if (inApp) {
+    let message = "";
+    if (inApp === "tiktok") {
+      message = "Google sign-in isn’t supported inside TikTok’s browser. Please tap the ⋮ menu (top-right) and choose 'Open in Safari' or 'Chrome' to continue.";
+    } else if (inApp === "pinterest") {
+      message = "Google sign-in isn’t supported inside Pinterest’s browser. Please open this page in Safari or Chrome.";
+    } else if (inApp === "youtube") {
+      message = "Google sign-in isn’t supported inside YouTube’s in-app browser. Please open this page in Safari or Chrome.";
+    } else if (inApp === "facebook") {
+      message = "Google sign-in isn’t supported inside Facebook/Instagram’s browser. Please open this page in Safari or Chrome.";
+    }
+
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-black text-white text-center">
+        <div className="max-w-md space-y-4">
+          <Sparkles className="h-12 w-12 mx-auto text-yellow-400" />
+          <h1 className="text-2xl font-bold">Heads up!</h1>
+          <p>{message}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 starfield-bg">
@@ -198,22 +198,11 @@ const Login = () => {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center space-x-2">
-                <input type="checkbox" className="rounded border-border" />
-                <span className="text-sm text-muted-foreground">Remember me</span>
-              </label>
-              <Link to="/forgot-password" className="text-sm text-primary hover:text-primary-glow">
-                Forgot password?
-              </Link>
             </div>
 
             <Button type="submit" className="cosmic-button w-full" disabled={isLoading}>
