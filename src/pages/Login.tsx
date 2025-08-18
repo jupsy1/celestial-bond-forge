@@ -15,11 +15,12 @@ declare global {
   }
 }
 
-// Detect if user is inside Pinterest, YouTube, TikTok
+// Detect if user is inside Pinterest, YouTube, TikTok, or Facebook app browsers
 function detectInAppBrowser(ua: string = navigator.userAgent || "") {
   if (/Pinterest/i.test(ua)) return "pinterest";
   if (/YouTube|GSA/i.test(ua)) return "youtube";
   if (/TikTok/i.test(ua)) return "tiktok";
+  if (/FBAN|FBAV|FB_IAB|Instagram/i.test(ua)) return "facebook";
   return null;
 }
 
@@ -39,52 +40,14 @@ const Login = () => {
     }
   }, [user, navigate]);
 
-  // Load Google Identity Services
+  // Load Google Identity Services script
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
     script.defer = true;
-    script.onload = () => {
-      if (!window.google) return;
-
-      window.google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-        callback: async (response: any) => {
-          const { credential } = response;
-          if (!credential) return;
-
-          const { data, error } = await supabase.auth.signInWithIdToken({
-            provider: "google",
-            token: credential,
-          });
-
-          if (error) {
-            console.error("Supabase login error:", error.message);
-            toast({
-              title: "Google sign in failed",
-              description: error.message,
-              variant: "destructive",
-            });
-          } else {
-            console.log("Logged in:", data);
-            window.location.href = "/dashboard";
-          }
-        },
-      });
-
-      // Render Google button into container
-      const btn = document.getElementById("google-login-btn");
-      if (btn) {
-        window.google.accounts.id.renderButton(btn, {
-          theme: "outline",
-          size: "large",
-          width: "100%",
-        });
-      }
-    };
     document.body.appendChild(script);
-  }, [toast]);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +85,7 @@ const Login = () => {
     }
   };
 
-  const handleGoogleGuard = () => {
+  const handleGoogleLogin = () => {
     const inApp = detectInAppBrowser();
     if (inApp === "pinterest") {
       alert("Google sign-in isn’t supported inside Pinterest’s browser. Please open in Safari or Chrome.");
@@ -136,8 +99,40 @@ const Login = () => {
       alert("Google sign-in isn’t supported inside TikTok’s browser. Please open in Safari or Chrome.");
       return;
     }
-    // If safe browser, click the official button programmatically
-    document.querySelector<HTMLDivElement>("#google-login-btn button")?.click();
+    if (inApp === "facebook") {
+      alert("Google sign-in isn’t supported inside Facebook or Instagram browsers. Please open in Safari or Chrome.");
+      return;
+    }
+
+    // Initialize GIS
+    window.google.accounts.id.initialize({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      callback: async (response: any) => {
+        const { credential } = response;
+        if (!credential) return;
+
+        // Pass ID token to Supabase
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: credential,
+        });
+
+        if (error) {
+          console.error("Supabase login error:", error.message);
+          toast({
+            title: "Google sign in failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          console.log("Logged in:", data);
+          window.location.href = "/dashboard";
+        }
+      },
+    });
+
+    // Trigger Google popup
+    window.google.accounts.id.prompt();
   };
 
   return (
@@ -195,3 +190,81 @@ const Login = () => {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center space-x-2">
+                <input type="checkbox" className="rounded border-border" />
+                <span className="text-sm text-muted-foreground">Remember me</span>
+              </label>
+              <Link to="/forgot-password" className="text-sm text-primary hover:text-primary-glow">
+                Forgot password?
+              </Link>
+            </div>
+
+            <Button 
+              type="submit" 
+              className="cosmic-button w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? "Signing in..." : "Sign In"}
+            </Button>
+          </form>
+
+          <div className="text-center space-y-4">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-card text-muted-foreground">Or continue with</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                variant="outline"
+                className="cosmic-card border-primary/30"
+                onClick={handleGoogleLogin}
+              >
+                Google
+              </Button>
+
+              <Button
+                variant="outline"
+                className="cosmic-card border-primary/30"
+                onClick={async () => {
+                  try {
+                    const { error } = await supabase.auth.signInWithOAuth({
+                      provider: "facebook",
+                      options: { redirectTo: `${window.location.origin}/dashboard` },
+                    });
+                    if (error) throw error;
+                  } catch (error: any) {
+                    toast({
+                      title: "Facebook sign in failed",
+                      description: "Please try again or use email/password.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              >
+                Facebook
+              </Button>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              Don&apos;t have an account?{" "}
+              <Link to="/signup" className="text-primary hover:text-primary-glow font-medium">
+                Sign up free
+              </Link>
+            </p>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Login;
