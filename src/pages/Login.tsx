@@ -10,13 +10,21 @@ import { useAuth, cleanupAuthState } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 /**
- * Detect in-app browsers (Instagram, FB, TikTok, etc.) and generic Android WebViews.
- * These environments block Google/Facebook OAuth and cause the 403 error.
+ * Strong in-app browser detection:
+ * - User agent tokens for IG/FB/TikTok/Twitter/Line
+ * - Generic Android WebView marker "; wv;"
+ * - Facebook/Instagram redirect domains in referrer
+ * - A few OEM browsers that frequently embed webviews
  */
-function isInAppBrowser(ua: string = navigator.userAgent || ""): boolean {
-  return /\b(FBAN|FBAV|FB_IAB|Instagram|IG|Line|Twitter|GSA|TikTok|MiuiBrowser|HuaweiBrowser|HeyTapBrowser|OPR\/|; wv;)\b/i.test(
+function isInAppBrowser(
+  ua: string = navigator.userAgent || "",
+  ref: string = document.referrer || ""
+): boolean {
+  const uaHit = /\b(FBAN|FBAV|FB_IAB|Instagram|IG|Line|Twitter|GSA|TikTok|MiuiBrowser|HuaweiBrowser|HeyTapBrowser|OPR\/|; wv;)\b/i.test(
     ua
   );
+  const refHit = /(l\.instagram\.com|lm\.facebook\.com|l\.facebook\.com)/i.test(ref);
+  return uaHit || refHit;
 }
 
 const Login = () => {
@@ -24,6 +32,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [inApp, setInApp] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -35,20 +44,31 @@ const Login = () => {
     }
   }, [user, navigate]);
 
+  // Evaluate detection once on mount and log useful info
+  useEffect(() => {
+    const ua = navigator.userAgent || "";
+    const ref = document.referrer || "";
+    const result = isInAppBrowser(ua, ref);
+    setInApp(result);
+    // Helpful diagnostics in DevTools
+    // (Open DevTools → Console on a device reproducing the issue)
+    console.log("[Login] UA:", ua);
+    console.log("[Login] Referrer:", ref || "(none)");
+    console.log("[Login] Detected in-app browser:", result);
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Clean up existing auth state
       cleanupAuthState();
       try {
         await supabase.auth.signOut({ scope: "global" });
       } catch {
-        // ignore sign-out errors
+        /* ignore */
       }
 
-      // Email/password sign-in
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -61,7 +81,7 @@ const Login = () => {
           title: "Welcome back!",
           description: "You've been signed in successfully.",
         });
-        window.location.href = "/dashboard"; // force full reload
+        window.location.href = "/dashboard";
       }
     } catch (error: any) {
       toast({
@@ -76,7 +96,7 @@ const Login = () => {
 
   const warnInAppBrowser = () => {
     alert(
-      "Google/Facebook sign-in isn’t supported inside this app’s browser.\n\n" +
+      "Google/Facebook sign-in isn’t supported inside this app’s built-in browser.\n\n" +
         "Please tap the ••• / ⋮ menu and choose “Open in Safari/Chrome” to continue."
     );
   };
@@ -84,6 +104,14 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 starfield-bg">
       <div className="w-full max-w-md space-y-8">
+        {/* If we detect an in-app browser, show a friendly banner */}
+        {inApp && (
+          <div className="mb-2 rounded-md border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-200">
+            You’re viewing this inside an app’s built-in browser. Google/Facebook
+            sign-in may be blocked. Please open in Safari/Chrome using the ••• / ⋮ menu.
+          </div>
+        )}
+
         {/* Logo */}
         <div className="text-center">
           <Link to="/" className="inline-flex items-center space-x-2 mb-8">
@@ -97,12 +125,8 @@ const Login = () => {
         {/* Login Card */}
         <Card className="cosmic-card p-8 space-y-6">
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-display font-bold text-foreground">
-              Welcome Back
-            </h1>
-            <p className="text-muted-foreground">
-              Sign in to continue your cosmic journey
-            </p>
+            <h1 className="text-3xl font-display font-bold text-foreground">Welcome Back</h1>
+            <p className="text-muted-foreground">Sign in to continue your cosmic journey</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -138,11 +162,7 @@ const Login = () => {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
@@ -153,19 +173,12 @@ const Login = () => {
                 <input type="checkbox" className="rounded border-border" />
                 <span className="text-sm text-muted-foreground">Remember me</span>
               </label>
-              <Link
-                to="/forgot-password"
-                className="text-sm text-primary hover:text-primary-glow"
-              >
+              <Link to="/forgot-password" className="text-sm text-primary hover:text-primary-glow">
                 Forgot password?
               </Link>
             </div>
 
-            <Button
-              type="submit"
-              className="cosmic-button w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="cosmic-button w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
@@ -176,9 +189,7 @@ const Login = () => {
                 <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-card text-muted-foreground">
-                  Or continue with
-                </span>
+                <span className="px-2 bg-card text-muted-foreground">Or continue with</span>
               </div>
             </div>
 
@@ -188,12 +199,16 @@ const Login = () => {
                 variant="outline"
                 className="cosmic-card border-primary/30"
                 onClick={async () => {
+                  // Diagnostics
+                  console.log("[Login] Detected in-app (at click):", isInAppBrowser());
+                  console.log("[Login] UA (at click):", navigator.userAgent || "");
+                  console.log("[Login] Referrer (at click):", document.referrer || "(none)");
+
                   if (isInAppBrowser()) {
                     warnInAppBrowser();
                     return;
                   }
                   try {
-                    console.log("Starting Google OAuth…");
                     const { error } = await supabase.auth.signInWithOAuth({
                       provider: "google",
                       options: { redirectTo: `${window.location.origin}/dashboard` },
@@ -203,9 +218,7 @@ const Login = () => {
                     console.error("Google OAuth error:", error);
                     toast({
                       title: "Google sign in failed",
-                      description:
-                        error?.message ||
-                        "Please check Supabase OAuth configuration.",
+                      description: error?.message || "Please try again.",
                       variant: "destructive",
                     });
                   }
@@ -219,6 +232,10 @@ const Login = () => {
                 variant="outline"
                 className="cosmic-card border-primary/30"
                 onClick={async () => {
+                  console.log("[Login] Detected in-app (at click):", isInAppBrowser());
+                  console.log("[Login] UA (at click):", navigator.userAgent || "");
+                  console.log("[Login] Referrer (at click):", document.referrer || "(none)");
+
                   if (isInAppBrowser()) {
                     warnInAppBrowser();
                     return;
@@ -232,9 +249,7 @@ const Login = () => {
                   } catch (error: any) {
                     toast({
                       title: "Facebook sign in failed",
-                      description:
-                        error?.message ||
-                        "Please try again or use email/password.",
+                      description: error?.message || "Please try again or use email/password.",
                       variant: "destructive",
                     });
                   }
@@ -246,10 +261,7 @@ const Login = () => {
 
             <p className="text-sm text-muted-foreground">
               Don't have an account?{" "}
-              <Link
-                to="/signup"
-                className="text-primary hover:text-primary-glow font-medium"
-              >
+              <Link to="/signup" className="text-primary hover:text-primary-glow font-medium">
                 Sign up free
               </Link>
             </p>
