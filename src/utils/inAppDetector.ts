@@ -1,42 +1,53 @@
 // src/utils/inAppDetector.ts
-export type InAppApp =
-  | "tiktok"
-  | "youtube"
-  | "pinterest"
-  | "instagram"
-  | "facebook"
-  | "android_webview"
-  | null;
+export type InAppApp = "tiktok" | "youtube" | "pinterest" | "instagram" | "facebook" | "gsa" | "android_webview";
 
-/** Detect if the app is being opened inside an in-app browser */
-export function detectInAppBrowser(
-  ua: string = navigator.userAgent || "",
-  ref: string = document.referrer || ""
-): InAppApp {
+/** Robust in-app detection (UA + common hints). */
+export function detectInAppBrowser(ua: string = navigator.userAgent || ""): InAppApp | null {
   const U = ua.toLowerCase();
-  const R = ref.toLowerCase();
 
-  if (U.includes("tiktok") || U.includes("musically") || U.includes("ttwebview") || R.includes("tiktok")) return "tiktok";
-  if (U.includes("instagram") || U.includes(" ig ") || U.includes("ig/") || R.includes("instagram")) return "instagram";
-  if (U.includes("fban") || U.includes("fbav") || U.includes("fb_iab") || R.includes("facebook")) return "facebook";
-  if (U.includes("pinterest") || R.includes("pinterest")) return "pinterest";
-  if (U.includes("youtube") || U.includes("gsa") || R.includes("youtube")) return "youtube";
+  if (U.includes("tiktok") || U.includes("ttwebview") || U.includes("musically")) return "tiktok";
+  if (U.includes("instagram") || U.includes(" ig ") || U.includes("ig/")) return "instagram";
+  if (U.includes("fban") || U.includes("fbav") || U.includes("fb_iab")) return "facebook";
+  if (U.includes("pinterest")) return "pinterest";
+  if (U.includes("youtube")) return "youtube";
+  if (U.includes("gsa")) return "gsa"; // Google Search App
 
-  // Generic Android webview hint
+  // Generic Android webview hint — many in-app browsers use this
   if (U.includes("; wv;")) return "android_webview";
 
   return null;
 }
 
-/** Return a friendly name to show in the alert */
-export function inAppPrettyName(app: InAppApp): string {
+export function inAppPrettyName(app: InAppApp | null): string {
   switch (app) {
     case "tiktok": return "TikTok";
     case "instagram": return "Instagram";
     case "facebook": return "Facebook";
     case "pinterest": return "Pinterest";
     case "youtube": return "YouTube";
+    case "gsa": return "Google app";
     case "android_webview": return "this in-app browser";
     default: return "this app";
+  }
+}
+
+export function inAppHelpMessage(app: InAppApp | null): string {
+  switch (app) {
+    case "tiktok":
+      return "Google sign-in doesn’t work in TikTok’s browser. Tap the ••• menu and choose “Open in Safari/Chrome”.";
+    case "instagram":
+      return "Google sign-in doesn’t work in Instagram’s browser. Open this page in Safari or Chrome.";
+    case "facebook":
+      return "Google sign-in doesn’t work in Facebook’s browser. Open this page in Safari or Chrome.";
+    case "pinterest":
+      return "Google sign-in doesn’t work in Pinterest’s browser. Open this page in Safari or Chrome.";
+    case "youtube":
+      return "Google sign-in may be blocked in YouTube’s in-app browser. Open this page in Safari or Chrome.";
+    case "gsa":
+      return "Google sign-in may be blocked in the Google app’s browser. Open this page in Safari or Chrome.";
+    case "android_webview":
+      return "Google sign-in is blocked in this in-app browser. Open this page in Safari or Chrome.";
+    default:
+      return "Open this page in Safari (iPhone) or Chrome (Android) to continue with Google.";
   }
 }
