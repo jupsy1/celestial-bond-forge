@@ -1,12 +1,11 @@
-export function detectInAppBrowser(): string | null {
+export type InAppName = "TikTok" | "Instagram" | "Facebook" | null;
+
+export function detectInAppBrowser(): InAppName {
   if (typeof navigator === "undefined") return null;
-  const ua = navigator.userAgent || navigator.vendor || "";
+  const ua = (navigator.userAgent || navigator.vendor || "").toLowerCase();
 
-  if (/FBAN|FBAV/i.test(ua)) return "Facebook";
-  if (/Instagram/i.test(ua)) return "Instagram";
-  if (/TikTok/i.test(ua)) return "TikTok";
-  if (/Line/i.test(ua)) return "LINE";
-  if (/Messenger/i.test(ua)) return "Messenger";
-
-  return null; // normal browser
+  if (ua.includes("tiktok")) return "TikTok";
+  if (ua.includes("instagram") || ua.includes("ig/")) return "Instagram";
+  if (ua.includes("fbav") || ua.includes("fb_iab") || ua.includes("facebook")) return "Facebook";
+  return null;
 }
