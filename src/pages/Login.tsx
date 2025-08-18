@@ -9,30 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, cleanupAuthState } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
-/**
- * Strong in-app browser detection:
- * - User agent tokens for IG/FB/TikTok/Twitter/Line
- * - Generic Android WebView marker "; wv;"
- * - Facebook/Instagram redirect domains in referrer
- * - A few OEM browsers that frequently embed webviews
- */
-function isInAppBrowser(
-  ua: string = navigator.userAgent || "",
-  ref: string = document.referrer || ""
-): boolean {
-  const uaHit = /\b(FBAN|FBAV|FB_IAB|Instagram|IG|Line|Twitter|GSA|TikTok|MiuiBrowser|HuaweiBrowser|HeyTapBrowser|OPR\/|; wv;)\b/i.test(
-    ua
-  );
-  const refHit = /(l\.instagram\.com|lm\.facebook\.com|l\.facebook\.com)/i.test(ref);
-  return uaHit || refHit;
-}
-
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [inApp, setInApp] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -40,53 +21,44 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      navigate('/dashboard');
     }
   }, [user, navigate]);
-
-  // Evaluate detection once on mount and log useful info
-  useEffect(() => {
-    const ua = navigator.userAgent || "";
-    const ref = document.referrer || "";
-    const result = isInAppBrowser(ua, ref);
-    setInApp(result);
-    // Helpful diagnostics in DevTools
-    // (Open DevTools → Console on a device reproducing the issue)
-    console.log("[Login] UA:", ua);
-    console.log("[Login] Referrer:", ref || "(none)");
-    console.log("[Login] Detected in-app browser:", result);
-  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
+    
     try {
+      // Clean up existing state
       cleanupAuthState();
+      // Attempt global sign out
       try {
-        await supabase.auth.signOut({ scope: "global" });
-      } catch {
-        /* ignore */
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
       }
-
+      
+      // Sign in with email/password
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-
+      
       if (error) throw error;
-
+      
       if (data.user) {
         toast({
           title: "Welcome back!",
           description: "You've been signed in successfully.",
         });
-        window.location.href = "/dashboard";
+        // Force page reload for clean state
+        window.location.href = '/dashboard';
       }
     } catch (error: any) {
       toast({
         title: "Sign in failed",
-        description: error?.message || "Please check your credentials and try again.",
+        description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     } finally {
@@ -94,31 +66,14 @@ const Login = () => {
     }
   };
 
-  const warnInAppBrowser = () => {
-    alert(
-      "Google/Facebook sign-in isn’t supported inside this app’s built-in browser.\n\n" +
-        "Please tap the ••• / ⋮ menu and choose “Open in Safari/Chrome” to continue."
-    );
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 starfield-bg">
       <div className="w-full max-w-md space-y-8">
-        {/* If we detect an in-app browser, show a friendly banner */}
-        {inApp && (
-          <div className="mb-2 rounded-md border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-200">
-            You’re viewing this inside an app’s built-in browser. Google/Facebook
-            sign-in may be blocked. Please open in Safari/Chrome using the ••• / ⋮ menu.
-          </div>
-        )}
-
         {/* Logo */}
         <div className="text-center">
           <Link to="/" className="inline-flex items-center space-x-2 mb-8">
             <Sparkles className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-display font-bold text-primary-foreground">
-              Star Sign Studio
-            </span>
+            <span className="text-2xl font-display font-bold text-primary-foreground">Star Sign Studio</span>
           </Link>
         </div>
 
@@ -158,9 +113,8 @@ const Login = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -178,7 +132,11 @@ const Login = () => {
               </Link>
             </div>
 
-            <Button type="submit" className="cosmic-button w-full" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              className="cosmic-button w-full"
+              disabled={isLoading}
+            >
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
@@ -194,31 +152,28 @@ const Login = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {/* GOOGLE */}
-              <Button
-                variant="outline"
+              <Button 
+                variant="outline" 
                 className="cosmic-card border-primary/30"
                 onClick={async () => {
-                  // Diagnostics
-                  console.log("[Login] Detected in-app (at click):", isInAppBrowser());
-                  console.log("[Login] UA (at click):", navigator.userAgent || "");
-                  console.log("[Login] Referrer (at click):", document.referrer || "(none)");
-
-                  if (isInAppBrowser()) {
-                    warnInAppBrowser();
-                    return;
-                  }
                   try {
-                    const { error } = await supabase.auth.signInWithOAuth({
-                      provider: "google",
-                      options: { redirectTo: `${window.location.origin}/dashboard` },
+                    console.log('Starting Google OAuth...');
+                    const { data, error } = await supabase.auth.signInWithOAuth({
+                      provider: 'google',
+                      options: {
+                        redirectTo: `${window.location.origin}/dashboard`
+                      }
                     });
-                    if (error) throw error;
+                    console.log('OAuth response:', { data, error });
+                    if (error) {
+                      console.error('OAuth error:', error);
+                      throw error;
+                    }
                   } catch (error: any) {
-                    console.error("Google OAuth error:", error);
+                    console.error('Caught error:', error);
                     toast({
                       title: "Google sign in failed",
-                      description: error?.message || "Please try again.",
+                      description: error.message || "Please check Supabase OAuth configuration.",
                       variant: "destructive",
                     });
                   }
@@ -226,30 +181,22 @@ const Login = () => {
               >
                 Google
               </Button>
-
-              {/* FACEBOOK */}
-              <Button
-                variant="outline"
+              <Button 
+                variant="outline" 
                 className="cosmic-card border-primary/30"
                 onClick={async () => {
-                  console.log("[Login] Detected in-app (at click):", isInAppBrowser());
-                  console.log("[Login] UA (at click):", navigator.userAgent || "");
-                  console.log("[Login] Referrer (at click):", document.referrer || "(none)");
-
-                  if (isInAppBrowser()) {
-                    warnInAppBrowser();
-                    return;
-                  }
                   try {
                     const { error } = await supabase.auth.signInWithOAuth({
-                      provider: "facebook",
-                      options: { redirectTo: `${window.location.origin}/dashboard` },
+                      provider: 'facebook',
+                      options: {
+                        redirectTo: `${window.location.origin}/dashboard`
+                      }
                     });
                     if (error) throw error;
                   } catch (error: any) {
                     toast({
                       title: "Facebook sign in failed",
-                      description: error?.message || "Please try again or use email/password.",
+                      description: "Please try again or use email/password.",
                       variant: "destructive",
                     });
                   }
