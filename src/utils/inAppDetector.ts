@@ -1,26 +1,19 @@
 // src/utils/inAppDetector.ts
-export function detectInApp(): "tiktok" | "instagram" | "facebook" | null {
-  const ua = navigator.userAgent.toLowerCase();
 
-  if (ua.includes("tiktok")) return "tiktok";
-  if (ua.includes("instagram")) return "instagram";
-  if (ua.includes("fbav") || ua.includes("facebook")) return "facebook";
-
+export function detectInAppBrowser() {
+  const ua = navigator.userAgent || navigator.vendor || "";
+  if (/tiktok/i.test(ua)) return "TikTok";
+  if (/instagram/i.test(ua)) return "Instagram";
+  if (/fbav|facebook/i.test(ua)) return "Facebook";
   return null;
 }
 
-export function redirectIfInApp() {
-  const inApp = detectInApp();
-  if (!inApp) return;
-
-  const currentUrl = window.location.href;
-
-  // Deep link out of the in-app browser
-  if (/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())) {
-    // iOS → Safari
-    window.location.href = `x-safari-${currentUrl}`;
-  } else if (/android/.test(navigator.userAgent.toLowerCase())) {
-    // Android → Chrome
-    window.location.href = `intent://${currentUrl.replace(/^https?:\/\//, "")}#Intent;scheme=https;package=com.android.chrome;end`;
+export function forceOpenInBrowser() {
+  try {
+    const url = window.location.href;
+    // Try to open in Safari/Chrome
+    window.open(url, "_blank");
+  } catch (err) {
+    console.error("Redirect failed", err);
   }
 }
