@@ -9,7 +9,7 @@ export type InAppApp =
   | "android_webview"
   | null;
 
-/** Detect common in-app browsers by UA (no JSX here) */
+/** UA-only detect (NO JSX here) */
 export function detectInAppBrowser(ua: string = navigator.userAgent || ""): InAppApp {
   const U = ua.toLowerCase();
 
@@ -26,7 +26,7 @@ export function detectInAppBrowser(ua: string = navigator.userAgent || ""): InAp
   return null;
 }
 
-/** Friendly app name for UI */
+/** Pretty name for UI components */
 export function inAppPrettyName(app: InAppApp): string {
   switch (app) {
     case "tiktok": return "TikTok";
@@ -40,7 +40,7 @@ export function inAppPrettyName(app: InAppApp): string {
   }
 }
 
-/** Short help text for UI */
+/** Short help text for UI components */
 export function inAppHelpMessage(app: InAppApp): string {
   switch (app) {
     case "tiktok":
