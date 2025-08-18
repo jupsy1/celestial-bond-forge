@@ -1,48 +1,26 @@
 // src/utils/inAppDetector.ts
+export function detectInApp(): "tiktok" | "instagram" | "facebook" | null {
+  const ua = navigator.userAgent.toLowerCase();
 
-import { useEffect, useState } from "react"
+  if (ua.includes("tiktok")) return "tiktok";
+  if (ua.includes("instagram")) return "instagram";
+  if (ua.includes("fbav") || ua.includes("facebook")) return "facebook";
 
-// Detect if we’re inside TikTok/Instagram/Facebook in-app browsers
-export function isInApp(): "tiktok" | "instagram" | "facebook" | null {
-  const ua = navigator.userAgent.toLowerCase()
-  if (ua.includes("tiktok")) return "tiktok"
-  if (ua.includes("instagram")) return "instagram"
-  if (ua.includes("fbav")) return "facebook"
-  return null
+  return null;
 }
 
-// Pretty names
-export function inAppPrettyName(app: "tiktok" | "instagram" | "facebook" | null): string {
-  if (app === "tiktok") return "TikTok"
-  if (app === "instagram") return "Instagram"
-  if (app === "facebook") return "Facebook"
-  return "Unknown App"
-}
+export function redirectIfInApp() {
+  const inApp = detectInApp();
+  if (!inApp) return;
 
-// Small helper for UI
-export function inAppHelpMessage(app: "tiktok" | "instagram" | "facebook" | null): string {
-  if (!app) return ""
-  return `You’re currently inside ${inAppPrettyName(app)}’s in-app browser. 
-We’ll open the page in Safari/Chrome so login works properly.`
-}
+  const currentUrl = window.location.href;
 
-// Hook that shows redirect message, then auto-redirects
-export function useInAppRedirect() {
-  const [app, setApp] = useState<"tiktok" | "instagram" | "facebook" | null>(null)
-  const [redirecting, setRedirecting] = useState(false)
-
-  useEffect(() => {
-    const detected = isInApp()
-    if (detected) {
-      setApp(detected)
-      setRedirecting(true)
-
-      // Show message briefly, then redirect
-      setTimeout(() => {
-        window.location.href = window.location.href
-      }, 2000) // 2 second delay so user sees why
-    }
-  }, [])
-
-  return { app, redirecting }
+  // Deep link out of the in-app browser
+  if (/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())) {
+    // iOS → Safari
+    window.location.href = `x-safari-${currentUrl}`;
+  } else if (/android/.test(navigator.userAgent.toLowerCase())) {
+    // Android → Chrome
+    window.location.href = `intent://${currentUrl.replace(/^https?:\/\//, "")}#Intent;scheme=https;package=com.android.chrome;end`;
+  }
 }
