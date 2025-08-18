@@ -9,7 +9,6 @@ export type InAppApp =
   | "android_webview"
   | null;
 
-/** UA-only detect (NO JSX in this file) */
 export function detectInAppBrowser(ua: string = navigator.userAgent || ""): InAppApp {
   const U = ua.toLowerCase();
 
@@ -18,15 +17,12 @@ export function detectInAppBrowser(ua: string = navigator.userAgent || ""): InAp
   if (U.includes("fban") || U.includes("fbav") || U.includes("fb_iab")) return "facebook";
   if (U.includes("pinterest")) return "pinterest";
   if (U.includes("youtube")) return "youtube";
-  if (U.includes("gsa")) return "gsa"; // Google Search App
-
-  // Generic Android webview hint
+  if (U.includes("gsa")) return "gsa";
   if (U.includes("; wv;")) return "android_webview";
 
   return null;
 }
 
-/** Pretty name for UI components */
 export function inAppPrettyName(app: InAppApp): string {
   switch (app) {
     case "tiktok": return "TikTok";
@@ -40,7 +36,6 @@ export function inAppPrettyName(app: InAppApp): string {
   }
 }
 
-/** Short help text for UI components */
 export function inAppHelpMessage(app: InAppApp): string {
   switch (app) {
     case "tiktok":
