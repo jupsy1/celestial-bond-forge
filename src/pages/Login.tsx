@@ -10,11 +10,13 @@ import { useAuth, cleanupAuthState } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 /**
- * Detect common in-app browsers that block Google OAuth (webviews).
- * This prevents users from hitting Google's "disallowed_useragent" page.
+ * Detect in-app browsers (Instagram, FB, TikTok, etc.) and generic Android WebViews.
+ * These environments block Google/Facebook OAuth and cause the 403 error.
  */
-function isInAppBrowser(userAgent: string = navigator.userAgent || ""): boolean {
-  return /(FBAN|FBAV|Instagram|Line|Twitter|TikTok)/i.test(userAgent);
+function isInAppBrowser(ua: string = navigator.userAgent || ""): boolean {
+  return /\b(FBAN|FBAV|FB_IAB|Instagram|IG|Line|Twitter|GSA|TikTok|MiuiBrowser|HuaweiBrowser|HeyTapBrowser|OPR\/|; wv;)\b/i.test(
+    ua
+  );
 }
 
 const Login = () => {
@@ -38,12 +40,12 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Clean up any existing auth state
+      // Clean up existing auth state
       cleanupAuthState();
       try {
         await supabase.auth.signOut({ scope: "global" });
       } catch {
-        // ignore sign-out errors, continue
+        // ignore sign-out errors
       }
 
       // Email/password sign-in
@@ -59,14 +61,12 @@ const Login = () => {
           title: "Welcome back!",
           description: "You've been signed in successfully.",
         });
-        // Force full reload to ensure clean state across providers
-        window.location.href = "/dashboard";
+        window.location.href = "/dashboard"; // force full reload
       }
     } catch (error: any) {
       toast({
         title: "Sign in failed",
-        description:
-          error?.message || "Please check your credentials and try again.",
+        description: error?.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     } finally {
@@ -188,21 +188,16 @@ const Login = () => {
                 variant="outline"
                 className="cosmic-card border-primary/30"
                 onClick={async () => {
-                  // 🔒 In-app browser guard
                   if (isInAppBrowser()) {
                     warnInAppBrowser();
                     return;
                   }
-
                   try {
                     console.log("Starting Google OAuth…");
-                    const { data, error } = await supabase.auth.signInWithOAuth({
+                    const { error } = await supabase.auth.signInWithOAuth({
                       provider: "google",
-                      options: {
-                        redirectTo: `${window.location.origin}/dashboard`,
-                      },
+                      options: { redirectTo: `${window.location.origin}/dashboard` },
                     });
-                    console.log("OAuth response:", { data, error });
                     if (error) throw error;
                   } catch (error: any) {
                     console.error("Google OAuth error:", error);
@@ -224,18 +219,14 @@ const Login = () => {
                 variant="outline"
                 className="cosmic-card border-primary/30"
                 onClick={async () => {
-                  // 🔒 In-app browser guard (same UX as Google)
                   if (isInAppBrowser()) {
                     warnInAppBrowser();
                     return;
                   }
-
                   try {
                     const { error } = await supabase.auth.signInWithOAuth({
                       provider: "facebook",
-                      options: {
-                        redirectTo: `${window.location.origin}/dashboard`,
-                      },
+                      options: { redirectTo: `${window.location.origin}/dashboard` },
                     });
                     if (error) throw error;
                   } catch (error: any) {
