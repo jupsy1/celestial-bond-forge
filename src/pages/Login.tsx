@@ -1,16 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Sparkles, Eye, EyeOff } from "lucide-react";
+import { Sparkles, Eye, EyeOff, Link as LinkIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, cleanupAuthState } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-
-// ✅ import the detector utility
-import { detectInAppBrowser, inAppPrettyName } from "@/utils/inAppDetector";
+import { detectInAppBrowser, inAppPrettyName, inAppHelpMessage } from "@/utils/inAppDetector";
 
 declare global {
   interface Window {
@@ -23,54 +21,102 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [inApp, setInApp] = useState<ReturnType<typeof detectInAppBrowser>>(null);
+  const [showPopupHelp, setShowPopupHelp] = useState(false);
+  const popupFallbackRef = useRef<number | null>(null);
+
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if already logged in
+  // If already signed in, go to dashboard
   useEffect(() => {
-    if (user) {
-      navigate("/dashboard");
-    }
+    if (user) navigate("/dashboard");
   }, [user, navigate]);
 
-  // Load Google Identity Services script
+  // Detect in-app browser on mount
   useEffect(() => {
+    setInApp(detectInAppBrowser());
+  }, []);
+
+  // Load Google Identity Services (only in real browsers)
+  useEffect(() => {
+    if (inApp) return;
+
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
     script.defer = true;
-    document.body.appendChild(script);
-  }, []);
+    script.onload = () => {
+      if (!window.google) return;
 
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        callback: async (response: any) => {
+          // Cancel fallback on any response
+          if (popupFallbackRef.current) {
+            clearTimeout(popupFallbackRef.current);
+            popupFallbackRef.current = null;
+          }
+
+          try {
+            const token = response?.credential;
+            if (!token) return;
+
+            const { error } = await supabase.auth.signInWithIdToken({
+              provider: "google",
+              token,
+            });
+            if (error) throw error;
+
+            window.location.href = "/dashboard";
+          } catch (err: any) {
+            toast({
+              title: "Google sign-in failed",
+              description: err?.message || "Please try again.",
+              variant: "destructive",
+            });
+          }
+        },
+      });
+
+      // Render the official Google button invisibly (improves reliability on iOS)
+      const container = document.getElementById("google-signin-container");
+      if (container) {
+        window.google.accounts.id.renderButton(container, {
+          theme: "outline",
+          size: "large",
+          width: "100%",
+          text: "signin_with",
+          logo_alignment: "left",
+        });
+      }
+    };
+
+    document.body.appendChild(script);
+  }, [inApp, toast]);
+
+  // Email/password
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
       cleanupAuthState();
-      try {
-        await supabase.auth.signOut({ scope: "global" });
-      } catch {}
+      try { await supabase.auth.signOut({ scope: "global" }); } catch {}
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
       if (data.user) {
-        toast({
-          title: "Welcome back!",
-          description: "You've been signed in successfully.",
-        });
+        toast({ title: "Welcome back!", description: "You've been signed in successfully." });
         window.location.href = "/dashboard";
       }
     } catch (error: any) {
       toast({
         title: "Sign in failed",
-        description: error.message || "Please check your credentials and try again.",
+        description: error?.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     } finally {
@@ -78,51 +124,43 @@ const Login = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    const app = detectInAppBrowser();
-
-    if (app) {
-      alert(`Google sign-in isn’t supported inside ${inAppPrettyName(app)}. Please open in Safari or Chrome instead.`);
+  // Google (GIS) with 3s fallback panel if popup/callback doesn’t happen
+  const onGoogleClick = () => {
+    if (inApp) {
+      // Show inline help (button disabled visually too)
+      setShowPopupHelp(true);
       return;
     }
 
-    // Initialize GIS
-    window.google.accounts.id.initialize({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      callback: async (response: any) => {
-        const { credential } = response;
-        if (!credential) return;
+    if (popupFallbackRef.current) clearTimeout(popupFallbackRef.current);
+    popupFallbackRef.current = window.setTimeout(() => setShowPopupHelp(true), 3000);
 
-        // Pass ID token to Supabase
-        const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: "google",
-          token: credential,
-        });
-
-        if (error) {
-          console.error("Supabase login error:", error.message);
-          toast({
-            title: "Google sign in failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else {
-          console.log("Logged in:", data);
-          window.location.href = "/dashboard";
-        }
-      },
-    });
-
-    // Trigger Google popup
-    window.google.accounts.id.prompt();
+    window.google?.accounts.id.prompt();
   };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard?.writeText(window.location.href);
+      toast({ title: "Link copied", description: "Paste it into Safari/Chrome" });
+    } catch {}
+  };
+
+  const appName = inAppPrettyName(inApp);
+  const helpText = inAppHelpMessage(inApp);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 starfield-bg">
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-md space-y-6">
+        {/* Inline warning banner if opened in an in-app browser */}
+        {inApp && (
+          <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-100">
+            You’re viewing this inside <b>{appName}</b>’s in-app browser. {helpText}
+          </div>
+        )}
+
         {/* Logo */}
         <div className="text-center">
-          <Link to="/" className="inline-flex items-center space-x-2 mb-8">
+          <Link to="/" className="inline-flex items-center space-x-2 mb-6">
             <Sparkles className="h-8 w-8 text-primary" />
             <span className="text-2xl font-display font-bold text-primary-foreground">
               Star Sign Studio
@@ -131,13 +169,13 @@ const Login = () => {
         </div>
 
         {/* Login Card */}
-        <Card className="cosmic-card p-8 space-y-6">
-          <div className="text-center space-y-2">
+        <Card className="cosmic-card p-6 space-y-6">
+          <div className="text-center space-y-1">
             <h1 className="text-3xl font-display font-bold text-foreground">Welcome Back</h1>
             <p className="text-muted-foreground">Sign in to continue your cosmic journey</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -166,8 +204,9 @@ const Login = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -190,7 +229,7 @@ const Login = () => {
             </Button>
           </form>
 
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-3">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border" />
@@ -200,15 +239,22 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                variant="outline"
-                className="cosmic-card border-primary/30"
-                onClick={handleGoogleLogin}
-              >
-                Google
-              </Button>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Google — GIS + fallback */}
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  className={`cosmic-card border-primary/30 w-full ${inApp ? "opacity-50 pointer-events-none" : ""}`}
+                  onClick={onGoogleClick}
+                  aria-disabled={!!inApp}
+                >
+                  Google
+                </Button>
+                {/* Hidden container where GIS renders the official button (boosts iOS reliability) */}
+                <div id="google-signin-container" className="hidden" />
+              </div>
 
+              {/* Facebook — keep Supabase OAuth redirect */}
               <Button
                 variant="outline"
                 className="cosmic-card border-primary/30"
@@ -219,7 +265,7 @@ const Login = () => {
                       options: { redirectTo: `${window.location.origin}/dashboard` },
                     });
                     if (error) throw error;
-                  } catch {
+                  } catch (error: any) {
                     toast({
                       title: "Facebook sign in failed",
                       description: "Please try again or use email/password.",
@@ -231,6 +277,33 @@ const Login = () => {
                 Facebook
               </Button>
             </div>
+
+            {/* Fallback help panel (shows if popup blocked in real browsers, or if manually toggled) */}
+            {showPopupHelp && !inApp && (
+              <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-100 space-y-2 text-left">
+                <p className="font-medium">Google sign-in didn’t open.</p>
+                <p>
+                  If you’re in an in-app browser, open this page in a real browser:
+                  <br />
+                  <b>Safari (iPhone)</b> or <b>Chrome (Android)</b>
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  <Button variant="outline" onClick={copyLink}>
+                    <LinkIcon className="h-4 w-4 mr-2" /> Copy link
+                  </Button>
+                  {/* Android Chrome deep link — often jumps out of webview */}
+                  <a
+                    href={`intent://${window.location.host}${window.location.pathname}${window.location.search}#Intent;package=com.android.chrome;scheme=https;end;`}
+                    className="inline-flex items-center rounded-md border px-3 py-2"
+                  >
+                    Open in Chrome
+                  </a>
+                  <Button variant="outline" onClick={() => setShowPopupHelp(false)}>
+                    Dismiss
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <p className="text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
