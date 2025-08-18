@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
 import { detectInAppBrowser } from "@/utils/inAppDetector";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
-  const [loading, setLoading] = useState(false);
   const [inApp, setInApp] = useState<string | null>(null);
 
   useEffect(() => {
@@ -11,66 +10,38 @@ export default function Login() {
   }, []);
 
   const handleLogin = async (provider: "google" | "facebook") => {
-    setLoading(true);
-    try {
-      const { error } = await window.supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: window.location.origin },
-      });
-      if (error) throw error;
-    } catch (err) {
-      console.error("Login failed:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const openExternally = () => {
-    const url = window.location.href;
-    // Force open in default browser
-    window.open(url, "_blank");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) alert(error.message);
   };
 
   return (
-    <div className="max-w-md mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6 text-center">
-        Sign in to StarSignStudio ✨
-      </h1>
+    <div className="flex flex-col items-center justify-center min-h-screen p-6">
+      <h1 className="text-2xl font-bold mb-6">Login to StarSignStudio</h1>
 
       {inApp ? (
-        <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-100 space-y-3">
-          <p>
-            🚫 You’re opening this page inside <b>{inApp}</b>’s in-app browser.
-          </p>
-          <p>
-            👉 Google & Facebook sign-in won’t work here.  
-            Please tap the <b>⋮</b> or <b>•••</b> menu and select{" "}
-            <b>“Open in Safari/Chrome”</b>.
-          </p>
-          <button
-            onClick={openExternally}
-            className="w-full rounded-md bg-yellow-500 text-black px-4 py-2 hover:bg-yellow-400 transition"
-          >
-            Open in Safari / Chrome
-          </button>
+        // 🔴 Show warning if inside TikTok / Instagram / Facebook in-app browser
+        <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-100 mb-4 text-center">
+          You’re using <b>{inApp}</b>’s in-app browser.  
+          Login with Google or Facebook will not work here.  
+          <br />
+          👉 Please open this page in <b>Safari</b> or <b>Chrome</b> instead.
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        // 🟢 Show real login buttons in normal browsers
+        <div className="flex flex-col gap-4 w-full max-w-xs">
           <button
             onClick={() => handleLogin("google")}
-            disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-md bg-white text-black px-4 py-2 hover:bg-gray-200 transition"
+            className="w-full py-2 px-4 rounded-md bg-red-500 text-white font-semibold hover:bg-red-600"
           >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             Continue with Google
           </button>
-
           <button
             onClick={() => handleLogin("facebook")}
-            disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-md bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition"
+            className="w-full py-2 px-4 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700"
           >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             Continue with Facebook
           </button>
         </div>
