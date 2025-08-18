@@ -9,6 +9,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, cleanupAuthState } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
+// ✅ Detect only Pinterest + YouTube in-app browsers
+function isPinterestOrYouTube(
+  ua: string = navigator.userAgent || "",
+  ref: string = document.referrer || ""
+): boolean {
+  return /\b(Pinterest|Pinner|YouTube)\b/i.test(ua) 
+    || /(pinterest\.com|youtube\.com)/i.test(ref);
+}
+
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,39 +30,35 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      navigate("/dashboard");
     }
   }, [user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
-      // Clean up existing state
       cleanupAuthState();
-      // Attempt global sign out
       try {
-        await supabase.auth.signOut({ scope: 'global' });
+        await supabase.auth.signOut({ scope: "global" });
       } catch (err) {
-        // Continue even if this fails
+        // ignore
       }
-      
-      // Sign in with email/password
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      
+
       if (error) throw error;
-      
+
       if (data.user) {
         toast({
           title: "Welcome back!",
           description: "You've been signed in successfully.",
         });
-        // Force page reload for clean state
-        window.location.href = '/dashboard';
+        window.location.href = "/dashboard";
       }
     } catch (error: any) {
       toast({
@@ -73,15 +78,21 @@ const Login = () => {
         <div className="text-center">
           <Link to="/" className="inline-flex items-center space-x-2 mb-8">
             <Sparkles className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-display font-bold text-primary-foreground">Star Sign Studio</span>
+            <span className="text-2xl font-display font-bold text-primary-foreground">
+              Star Sign Studio
+            </span>
           </Link>
         </div>
 
         {/* Login Card */}
         <Card className="cosmic-card p-8 space-y-6">
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-display font-bold text-foreground">Welcome Back</h1>
-            <p className="text-muted-foreground">Sign in to continue your cosmic journey</p>
+            <h1 className="text-3xl font-display font-bold text-foreground">
+              Welcome Back
+            </h1>
+            <p className="text-muted-foreground">
+              Sign in to continue your cosmic journey
+            </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -127,13 +138,16 @@ const Login = () => {
                 <input type="checkbox" className="rounded border-border" />
                 <span className="text-sm text-muted-foreground">Remember me</span>
               </label>
-              <Link to="/forgot-password" className="text-sm text-primary hover:text-primary-glow">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-primary hover:text-primary-glow"
+              >
                 Forgot password?
               </Link>
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="cosmic-button w-full"
               disabled={isLoading}
             >
@@ -147,33 +161,45 @@ const Login = () => {
                 <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-card text-muted-foreground">Or continue with</span>
+                <span className="px-2 bg-card text-muted-foreground">
+                  Or continue with
+                </span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Button 
-                variant="outline" 
+              {/* Google Button */}
+              <Button
+                variant="outline"
                 className="cosmic-card border-primary/30"
                 onClick={async () => {
+                  if (isPinterestOrYouTube()) {
+                    alert(
+                      "Google sign-in isn’t supported inside Pinterest or YouTube’s in-app browser. Please open in Safari/Chrome."
+                    );
+                    return;
+                  }
+
                   try {
-                    console.log('Starting Google OAuth...');
+                    console.log("Starting Google OAuth...");
                     const { data, error } = await supabase.auth.signInWithOAuth({
-                      provider: 'google',
+                      provider: "google",
                       options: {
-                        redirectTo: `${window.location.origin}/dashboard`
-                      }
+                        redirectTo: `${window.location.origin}/dashboard`,
+                      },
                     });
-                    console.log('OAuth response:', { data, error });
+                    console.log("OAuth response:", { data, error });
                     if (error) {
-                      console.error('OAuth error:', error);
+                      console.error("OAuth error:", error);
                       throw error;
                     }
                   } catch (error: any) {
-                    console.error('Caught error:', error);
+                    console.error("Caught error:", error);
                     toast({
                       title: "Google sign in failed",
-                      description: error.message || "Please check Supabase OAuth configuration.",
+                      description:
+                        error.message ||
+                        "Please check Supabase OAuth configuration.",
                       variant: "destructive",
                     });
                   }
@@ -181,22 +207,32 @@ const Login = () => {
               >
                 Google
               </Button>
-              <Button 
-                variant="outline" 
+
+              {/* Facebook Button */}
+              <Button
+                variant="outline"
                 className="cosmic-card border-primary/30"
                 onClick={async () => {
+                  if (isPinterestOrYouTube()) {
+                    alert(
+                      "Facebook sign-in isn’t supported inside Pinterest or YouTube’s in-app browser. Please open in Safari/Chrome."
+                    );
+                    return;
+                  }
+
                   try {
                     const { error } = await supabase.auth.signInWithOAuth({
-                      provider: 'facebook',
+                      provider: "facebook",
                       options: {
-                        redirectTo: `${window.location.origin}/dashboard`
-                      }
+                        redirectTo: `${window.location.origin}/dashboard`,
+                      },
                     });
                     if (error) throw error;
                   } catch (error: any) {
                     toast({
                       title: "Facebook sign in failed",
-                      description: "Please try again or use email/password.",
+                      description:
+                        "Please try again or use email/password.",
                       variant: "destructive",
                     });
                   }
@@ -208,7 +244,10 @@ const Login = () => {
 
             <p className="text-sm text-muted-foreground">
               Don't have an account?{" "}
-              <Link to="/signup" className="text-primary hover:text-primary-glow font-medium">
+              <Link
+                to="/signup"
+                className="text-primary hover:text-primary-glow font-medium"
+              >
                 Sign up free
               </Link>
             </p>
