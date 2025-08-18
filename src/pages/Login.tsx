@@ -1,72 +1,73 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { detectInApp, redirectIfInApp } from "@/utils/inAppDetector";
+import { detectInAppBrowser, forceOpenInBrowser } from "@/utils/inAppDetector";
 
 export default function Login() {
+  const [loading, setLoading] = useState(false);
   const [inApp, setInApp] = useState<string | null>(null);
 
   useEffect(() => {
-    const detected = detectInApp();
-    setInApp(detected);
+    const result = detectInAppBrowser();
+    if (result) {
+      setInApp(result);
 
-    if (detected) {
-      // try deep-link redirect immediately
-      redirectIfInApp();
+      // Try auto-redirect after short delay
+      setTimeout(() => {
+        forceOpenInBrowser();
+      }, 1200);
     }
   }, []);
 
   const handleLogin = async (provider: "google" | "facebook") => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: window.location.origin },
-    });
-    if (error) console.error("Auth error:", error.message);
+    setLoading(true);
+    try {
+      const { data, error } = await window.supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error("Login failed:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (inApp) {
-    // fallback message if still stuck in TikTok/Instagram
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black px-4">
-        <div className="w-full max-w-sm rounded-xl bg-red-900/30 border border-red-400 p-6 text-center text-white">
-          <h2 className="text-lg font-semibold mb-3">
-            Open in Safari or Chrome
-          </h2>
-          <p className="text-sm mb-4">
-            It looks like you’re using {inApp}’s in-app browser.  
-            Google login is blocked here.  
-            Please tap the **three dots** (⋮) and choose  
-            <b> “Open in Safari”</b> (iPhone) or <b>“Open in Chrome”</b> (Android).
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Normal login UI
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-purple-900 via-black to-purple-950 px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-black/60 p-8 shadow-xl border border-white/10">
-        <h1 className="text-center text-2xl font-bold text-white mb-6">
-          Sign in to <span className="text-purple-400">StarSign Studio</span>
-        </h1>
-
-        <div className="flex flex-col gap-3">
-          <Button
-            onClick={() => handleLogin("google")}
-            className="w-full bg-white text-black hover:bg-gray-200"
-          >
-            Continue with Google
-          </Button>
-
-          <Button
-            onClick={() => handleLogin("facebook")}
-            className="w-full bg-blue-600 text-white hover:bg-blue-700"
-          >
-            Continue with Facebook
-          </Button>
+    <div className="max-w-md mx-auto p-6">
+      {inApp && (
+        <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-100 mb-4">
+          🚫 You’re opening this page inside <b>{inApp}</b>’s in-app browser.
+          <br />
+          👉 Please tap the <b>⋮</b> (menu) and choose{" "}
+          <b>“Open in Safari/Chrome”</b> to continue with Google or Facebook.
         </div>
+      )}
+
+      <h1 className="text-2xl font-bold mb-6 text-center">
+        Sign in to StarSignStudio ✨
+      </h1>
+
+      <div className="flex flex-col gap-3">
+        <button
+          onClick={() => handleLogin("google")}
+          disabled={loading}
+          className="flex items-center justify-center gap-2 rounded-md bg-white text-black px-4 py-2 hover:bg-gray-200 transition"
+        >
+          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+          Continue with Google
+        </button>
+
+        <button
+          onClick={() => handleLogin("facebook")}
+          disabled={loading}
+          className="flex items-center justify-center gap-2 rounded-md bg-blue-600 text-white px-4 py-2 hover:bg-blue-700 transition"
+        >
+          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+          Continue with Facebook
+        </button>
       </div>
     </div>
   );
