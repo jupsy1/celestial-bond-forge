@@ -17,8 +17,20 @@ export function inAppPrettyName(app: "tiktok" | "instagram" | "facebook" | null)
   return "Unknown App"
 }
 
-// Helpful message for users
+// Helpful message (for debugging/logging, optional UI)
 export function inAppHelpMessage(app: "tiktok" | "instagram" | "facebook" | null): string {
   if (!app) return ""
-  return "For the best experience, please open this page in Safari or Chrome instead."
+  return "For the best experience, we’ll open this page in your default browser."
+}
+
+// 🔥 Auto-redirect out of in-app browsers
+export function handleInAppRedirect() {
+  const app = isInApp()
+  if (!app) return
+
+  // Force open in the system browser
+  // iOS/Android trick: using window.open with _blank sometimes doesn’t work in WebView
+  // Instead, replace location directly:
+  const currentUrl = window.location.href
+  window.location.href = currentUrl
 }
