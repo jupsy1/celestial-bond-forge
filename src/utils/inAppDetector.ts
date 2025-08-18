@@ -1,5 +1,7 @@
 // src/utils/inAppDetector.ts
 
+import { useEffect, useState } from "react"
+
 // Detect if we’re inside TikTok/Instagram/Facebook in-app browsers
 export function isInApp(): "tiktok" | "instagram" | "facebook" | null {
   const ua = navigator.userAgent.toLowerCase()
@@ -9,7 +11,7 @@ export function isInApp(): "tiktok" | "instagram" | "facebook" | null {
   return null
 }
 
-// Pretty name for display
+// Pretty names
 export function inAppPrettyName(app: "tiktok" | "instagram" | "facebook" | null): string {
   if (app === "tiktok") return "TikTok"
   if (app === "instagram") return "Instagram"
@@ -17,20 +19,30 @@ export function inAppPrettyName(app: "tiktok" | "instagram" | "facebook" | null)
   return "Unknown App"
 }
 
-// Helpful message (for debugging/logging, optional UI)
+// Small helper for UI
 export function inAppHelpMessage(app: "tiktok" | "instagram" | "facebook" | null): string {
   if (!app) return ""
-  return "For the best experience, we’ll open this page in your default browser."
+  return `You’re currently inside ${inAppPrettyName(app)}’s in-app browser. 
+We’ll open the page in Safari/Chrome so login works properly.`
 }
 
-// 🔥 Auto-redirect out of in-app browsers
-export function handleInAppRedirect() {
-  const app = isInApp()
-  if (!app) return
+// Hook that shows redirect message, then auto-redirects
+export function useInAppRedirect() {
+  const [app, setApp] = useState<"tiktok" | "instagram" | "facebook" | null>(null)
+  const [redirecting, setRedirecting] = useState(false)
 
-  // Force open in the system browser
-  // iOS/Android trick: using window.open with _blank sometimes doesn’t work in WebView
-  // Instead, replace location directly:
-  const currentUrl = window.location.href
-  window.location.href = currentUrl
+  useEffect(() => {
+    const detected = isInApp()
+    if (detected) {
+      setApp(detected)
+      setRedirecting(true)
+
+      // Show message briefly, then redirect
+      setTimeout(() => {
+        window.location.href = window.location.href
+      }, 2000) // 2 second delay so user sees why
+    }
+  }, [])
+
+  return { app, redirecting }
 }
