@@ -9,7 +9,7 @@ export type InAppApp =
   | "android_webview"
   | null;
 
-/** UA-only detect (NO JSX here) */
+/** UA-only detect (NO JSX in this file) */
 export function detectInAppBrowser(ua: string = navigator.userAgent || ""): InAppApp {
   const U = ua.toLowerCase();
 
