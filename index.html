@@ -1,54 +1,16 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
-    <title>Star Sign Studio</title>
+<body>
+  <div id="root"></div>
 
-    <!-- Basic SEO / social -->
-    <meta name="description" content="Discover your cosmic love story with Star Sign Studio" />
-    <meta name="author" content="Star Sign Studio" />
-    <meta property="og:title" content="Star Sign Studio" />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
+  <!-- Inject your Google Client ID so GIS can use it -->
+  <script>
+    window.APP_CONFIG = {
+      VITE_GOOGLE_CLIENT_ID: "1079461739066-10g38964vj59p7u3vspsidh89hhpgcaj.apps.googleusercontent.com"
+    };
+  </script>
 
-    <!-- Google Identity Services (GIS) — load globally so window.google is always present -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- Google Identity Services (ID token mode — NO Supabase branding) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-    <!-- Runtime config fallback (so the app has the Client ID even if envs aren’t injected) -->
-    <script>
-      window.APP_CONFIG = {
-        VITE_GOOGLE_CLIENT_ID:
-          "1079461739066-10g38964vj59p7u3vspsidh89hhpgcaj.apps.googleusercontent.com",
-      };
-    </script>
-
-    <!-- OPTIONAL: If you use a Content Security Policy, ensure accounts.google.com is allowed.
-         Only add/merge a CSP if you already use one; don’t duplicate CSP tags. Example:
-
-    <meta http-equiv="Content-Security-Policy"
-      content="
-        default-src 'self';
-        script-src 'self' https://accounts.google.com 'unsafe-inline' 'unsafe-eval';
-        connect-src 'self' https://accounts.google.com https://*.supabase.co;
-        frame-src https://accounts.google.com;
-        img-src 'self' https://*.gstatic.com data:;
-        style-src 'self' 'unsafe-inline';
-      ">
-    -->
-  </head>
-
-  <body>
-    <noscript>
-      Please enable JavaScript to use Star Sign Studio.
-    </noscript>
-
-    <div id="root"></div>
-
-    <!-- Your Vite entry -->
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+  <!-- Your app -->
+  <script type="module" src="/src/main.tsx"></script>
+</body>
