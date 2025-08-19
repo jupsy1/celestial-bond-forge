@@ -54,7 +54,7 @@ function providerPolicy(inApp: ReturnType<typeof detectInApp>) {
   switch (inApp) {
     case "Instagram":
     case "Pinterest":
-      // You reported: Google blocked, Facebook OK
+      // Your report: Google blocked, Facebook OK
       return { googleBlocked: true, facebookBlocked: false };
     case "TikTok":
     case "YouTube":
@@ -72,7 +72,9 @@ function providerPolicy(inApp: ReturnType<typeof detectInApp>) {
 export default function Login() {
   const [inApp, setInApp] = useState<ReturnType<typeof detectInApp>>(null);
   const [gisReady, setGisReady] = useState(false);
-  const [gisTimeoutFired, setGisTimeoutFired] = useState(false); // safety-net if GIS fails to load
+  const [gisTimeoutFired, setGisTimeoutFired] = useState(false); // safety‑net if GIS fails to load
+  const [copied, setCopied] = useState(false);                   // ✅ show “Copied ✓”
+  const [shareError, setShareError] = useState<string | null>(null);
 
   // Prefer Netlify env; fall back to index.html APP_CONFIG
   const GOOGLE_CLIENT_ID = useMemo(
@@ -112,7 +114,7 @@ export default function Login() {
     };
   }, [blockedByUA]);
 
-  // Initialize GIS & render official Google button (ID-token; no Supabase branding)
+  // Initialize GIS & render official Google button (ID‑token; no Supabase branding)
   useEffect(() => {
     if (googleBlocked) return;
     if (!gisReady || !window.google || !GOOGLE_CLIENT_ID) return;
@@ -159,18 +161,51 @@ export default function Login() {
     if (error) alert(error.message);
   };
 
-  // Helpers for warning box
+  // ✅ Better “Copy link” with visible confirmation + fallback
   const copyLink = async () => {
+    const url = window.location.href;
     try {
-      await navigator.clipboard.writeText(window.location.href);
-      alert("Link copied! Open Safari/Chrome and paste to continue.");
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        // Fallback for older in‑app browsers
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
     } catch {
-      alert("Copy failed. Long-press the address bar to copy the link.");
+      alert("Copy failed. Long‑press the address bar to copy the link.");
     }
   };
-  const openInBrowser = () => {
-    window.open(window.location.href, "_blank", "noopener,noreferrer");
+
+  // ✅ Use native share sheet when available (often better than window.open)
+  const canShare = typeof navigator !== "undefined" && !!navigator.share;
+  const shareLink = async () => {
+    setShareError(null);
+    try {
+      await navigator.share({
+        title: "Star Sign Studio",
+        text: "Open this in your browser to sign in:",
+        url: window.location.href,
+      });
+    } catch (e: any) {
+      // User cancelled or share not available
+      if (e && e.name !== "AbortError") setShareError("Share unavailable here. Try Copy link instead.");
+    }
   };
+
+  // ✅ Render an actual anchor styled as a button (more reliable in webviews)
+  const externalHref = "https://www.starsignstudio.com/login";
+
+  // Helpers for warning box
   const openInstructions = isIOS()
     ? "Tap the ••• (or aA) menu and choose “Open in Safari”."
     : isAndroid()
@@ -191,7 +226,7 @@ export default function Login() {
         {showWarning && (
           <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm text-center space-y-3">
             <div>
-              {inApp ? <>You’re inside <b>{inApp}</b>’s in-app browser.</> : null}
+              {inApp ? <>You’re inside <b>{inApp}</b>’s in‑app browser.</> : null}
               <br />
               {warningLines.map((l, i) => (<div key={i}>⚠️ {l}</div>))}
               {googleBlocked && (
@@ -202,16 +237,41 @@ export default function Login() {
               )}
             </div>
 
-            <div className="flex gap-2 justify-center">
-              <button onClick={copyLink} className="py-2 px-3 rounded-md border bg-white text-black hover:bg-gray-100">
+            <div className="flex flex-wrap gap-2 justify-center">
+              <button
+                onClick={copyLink}
+                className="py-2 px-3 rounded-md border bg-white text-black hover:bg-gray-100"
+              >
                 Copy link
               </button>
-              <button onClick={openInBrowser} className="py-2 px-3 rounded-md border bg-white text-black hover:bg-gray-100">
+
+              {/* Visible anchor as button */}
+              <a
+                href={externalHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-2 px-3 rounded-md border bg-white text-black hover:bg-gray-100 inline-flex items-center justify-center"
+              >
                 Open in browser
-              </button>
+              </a>
+
+              {canShare && (
+                <button
+                  onClick={shareLink}
+                  className="py-2 px-3 rounded-md border bg-white text-black hover:bg-gray-100"
+                >
+                  Share…
+                </button>
+              )}
             </div>
 
             <div className="text-xs opacity-80">{openInstructions}</div>
+
+            {/* Small confirmations/errors */}
+            <div className="text-xs">
+              {copied && <span className="text-green-600">Link copied ✓</span>}
+              {!copied && shareError && <span className="text-red-600">{shareError}</span>}
+            </div>
           </div>
         )}
 
