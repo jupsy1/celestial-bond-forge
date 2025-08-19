@@ -1,307 +1,225 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { ZodiacSelector } from "@/components/ui/zodiac-selector";
-import { Sparkles, Eye, EyeOff } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth, cleanupAuthState } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 
-const SignUp = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-    zodiacSign: "",
-    birthDate: "",
-    marketingOptIn: true
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
+/** Same in-app detection as Login */
+function detectInApp():
+  | "TikTok"
+  | "YouTube"
+  | "Instagram"
+  | "FacebookApp"
+  | "Pinterest"
+  | "GoogleApp"
+  | "AndroidWebView"
+  | "iOSWebView"
+  | null {
+  if (typeof navigator === "undefined") return null;
+  const ua = (navigator.userAgent || navigator.vendor || "").toLowerCase();
 
-  // Redirect if already logged in
+  if (ua.includes("tiktok")) return "TikTok";
+  if (ua.includes("youtube")) return "YouTube";
+  if (ua.includes("instagram") || ua.includes("ig/")) return "Instagram";
+  if (ua.includes("fbav") || ua.includes("fb_iab") || ua.includes("facebook")) return "FacebookApp";
+  if (ua.includes("pinterest")) return "Pinterest";
+  if (ua.includes("gsa")) return "GoogleApp";
+  if (ua.includes("; wv;")) return "AndroidWebView";
+
+  const isiOS = /iphone|ipad|ipod/.test(ua);
+  const isSafari = ua.includes("safari");
+  if (isiOS && !isSafari) return "iOSWebView";
+
+  return null;
+}
+
+function isIOS() {
+  if (typeof navigator === "undefined") return false;
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+function isAndroid() {
+  if (typeof navigator === "undefined") return false;
+  return /android/i.test(navigator.userAgent);
+}
+
+declare global {
+  interface Window {
+    google?: any;
+    APP_CONFIG?: { VITE_GOOGLE_CLIENT_ID?: string };
+  }
+}
+
+function providerPolicy(inApp: ReturnType<typeof detectInApp>) {
+  const allowAll = { googleBlocked: false, facebookBlocked: false };
+  if (!inApp) return allowAll;
+
+  switch (inApp) {
+    case "Instagram":
+    case "Pinterest":
+      return { googleBlocked: true, facebookBlocked: false };
+    case "TikTok":
+    case "YouTube":
+    case "FacebookApp":
+    case "GoogleApp":
+    case "AndroidWebView":
+    case "iOSWebView":
+      return { googleBlocked: true, facebookBlocked: true };
+    default:
+      return allowAll;
+  }
+}
+
+export default function SignUp() {
+  const [inApp, setInApp] = useState<ReturnType<typeof detectInApp>>(null);
+  const [gisReady, setGisReady] = useState(false);
+  const [gisTimeoutFired, setGisTimeoutFired] = useState(false);
+
+  const GOOGLE_CLIENT_ID = useMemo(
+    () =>
+      (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ||
+      window.APP_CONFIG?.VITE_GOOGLE_CLIENT_ID,
+    []
+  );
+
   useEffect(() => {
-    if (user) {
-      navigate('/dashboard');
-    }
-  }, [user, navigate]);
+    setInApp(detectInApp());
+  }, []);
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Password mismatch",
-        description: "Please make sure your passwords match.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const { googleBlocked: blockedByUA, facebookBlocked } = providerPolicy(inApp);
+  const googleBlocked = blockedByUA || gisTimeoutFired;
 
-    if (!formData.zodiacSign) {
-      toast({
-        title: "Zodiac sign required",
-        description: "Please select your zodiac sign to continue.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    
-    try {
-      // Clean up existing state
-      cleanupAuthState();
-      
-      const redirectUrl = `${window.location.origin}/`;
-      
-      // Sign up with email/password
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            display_name: formData.email,
-            zodiac_sign: formData.zodiacSign,
-            birth_date: formData.birthDate || null,
-            marketing_opt_in: formData.marketingOptIn
-          }
-        }
-      });
-      
-      if (error) throw error;
-      
-      if (data.user) {
-        toast({
-          title: "Account created!",
-          description: "Welcome to Star Sign Studio! Check your email to confirm your account.",
-        });
-        // Force page reload for clean state
-        window.location.href = '/dashboard';
+  useEffect(() => {
+    if (blockedByUA) return;
+    let tries = 0;
+    const maxTries = 40;
+    const poll = setInterval(() => {
+      tries++;
+      if (window.google) {
+        setGisReady(true);
+        clearInterval(poll);
+      } else if (tries >= maxTries) {
+        clearInterval(poll);
       }
-    } catch (error: any) {
-      toast({
-        title: "Sign up failed",
-        description: error.message || "Please try again.",
-        variant: "destructive",
+    }, 100);
+
+    const timeout = setTimeout(() => {
+      if (!window.google) setGisTimeoutFired(true);
+    }, 3000);
+
+    return () => {
+      clearInterval(poll);
+      clearTimeout(timeout);
+    };
+  }, [blockedByUA]);
+
+  useEffect(() => {
+    if (googleBlocked) return;
+    if (!gisReady || !window.google || !GOOGLE_CLIENT_ID) return;
+
+    const onCredential = async (resp: any) => {
+      const idToken = resp?.credential;
+      if (!idToken) return;
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: "google",
+        token: idToken,
       });
-    } finally {
-      setIsLoading(false);
+      if (error) { alert(error.message); return; }
+      window.location.href = "/dashboard";
+    };
+
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: onCredential,
+      ux_mode: "popup",
+      auto_select: false,
+      itp_support: true,
+    });
+
+    const mount = document.getElementById("googleSignupBtnMount");
+    if (mount) {
+      window.google.accounts.id.renderButton(mount, {
+        type: "standard",
+        theme: "outline",
+        size: "large",
+        text: "signup_with",
+        shape: "pill",
+        logo_alignment: "left",
+      });
+      window.google.accounts.id.prompt();
     }
+  }, [googleBlocked, gisReady, GOOGLE_CLIENT_ID]);
+
+  const handleFacebook = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "facebook",
+      options: { redirectTo: window.location.origin + "/dashboard" },
+    });
+    if (error) alert(error.message);
   };
 
-  const updateFormData = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      alert("Link copied! Open Safari/Chrome and paste to continue.");
+    } catch {
+      alert("Copy failed. Long-press the address bar to copy the link.");
+    }
   };
+  const openInBrowser = () => {
+    window.open(window.location.href, "_blank", "noopener,noreferrer");
+  };
+  const openInstructions = isIOS()
+    ? "Tap the ••• (or aA) menu and choose “Open in Safari”."
+    : isAndroid()
+    ? "Tap the ⋮ menu and choose “Open in Chrome”."
+    : "Open this page in your default browser.";
+
+  const warningLines: string[] = [];
+  if (googleBlocked) warningLines.push("Google sign up doesn’t work inside this app’s browser.");
+  if (facebookBlocked) warningLines.push("Facebook sign up doesn’t work reliably inside this app’s browser.");
+  const showWarning = googleBlocked || facebookBlocked;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 starfield-bg">
-      <div className="w-full max-w-md space-y-8">
-        {/* Logo */}
-        <div className="text-center">
-          <Link to="/" className="inline-flex items-center space-x-2 mb-8">
-            <Sparkles className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-display font-bold text-primary-foreground">Star Sign Studio</span>
-          </Link>
-        </div>
+    <main className="min-h-screen flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-sm space-y-4">
+        <h1 className="text-2xl font-bold text-center">Create your Star Sign Studio account ✨</h1>
 
-        {/* Sign Up Card */}
-        <Card className="cosmic-card p-8 space-y-6">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-display font-bold text-foreground">Join the Stars</h1>
-            <p className="text-muted-foreground">Create your account and start your cosmic love journey</p>
+        {showWarning && (
+          <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm text-center space-y-3">
+            <div>
+              {inApp ? <>You’re inside <b>{inApp}</b>’s in-app browser.</> : null}
+              <br />
+              {warningLines.map((l, i) => (<div key={i}>⚠️ {l}</div>))}
+              {googleBlocked && (
+                <div>👉 To use <b>Google</b> sign up, open <b>www.starsignstudio.com</b> in Safari or Chrome.</div>
+              )}
+              {facebookBlocked && (
+                <div>👉 If <b>Facebook</b> sign up fails, open in Safari/Chrome and try again.</div>
+              )}
+            </div>
+
+            <div className="flex gap-2 justify-center">
+              <button onClick={copyLink} className="py-2 px-3 rounded-md border bg-white text-black hover:bg-gray-100">
+                Copy link
+              </button>
+              <button onClick={openInBrowser} className="py-2 px-3 rounded-md border bg-white text-black hover:bg-gray-100">
+                Open in browser
+              </button>
+            </div>
+
+            <div className="text-xs opacity-80">{openInstructions}</div>
           </div>
+        )}
 
-          <form onSubmit={handleSignUp} className="space-y-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={(e) => updateFormData("email", e.target.value)}
-                  required
-                  className="cosmic-card border-primary/20 focus:border-primary/50"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Create a strong password"
-                    value={formData.password}
-                    onChange={(e) => updateFormData("password", e.target.value)}
-                    required
-                    className="cosmic-card border-primary/20 focus:border-primary/50 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm your password"
-                    value={formData.confirmPassword}
-                    onChange={(e) => updateFormData("confirmPassword", e.target.value)}
-                    required
-                    className="cosmic-card border-primary/20 focus:border-primary/50 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Your Zodiac Sign</Label>
-                <ZodiacSelector
-                  selectedSign={formData.zodiacSign}
-                  onSignSelect={(sign) => updateFormData("zodiacSign", sign)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="birthDate">Birth Date (Optional)</Label>
-                <Input
-                  id="birthDate"
-                  type="date"
-                  value={formData.birthDate}
-                  onChange={(e) => updateFormData("birthDate", e.target.value)}
-                  className="cosmic-card border-primary/20 focus:border-primary/50"
-                />
-                <p className="text-xs text-muted-foreground">
-                  For more accurate readings and personalized guidance
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <label className="flex items-start space-x-3">
-                <input 
-                  type="checkbox" 
-                  checked={formData.marketingOptIn}
-                  onChange={(e) => updateFormData("marketingOptIn", e.target.checked)}
-                  className="rounded border-border mt-1" 
-                />
-                <span className="text-sm text-muted-foreground leading-relaxed">
-                  I'd like to receive daily horoscopes, cosmic insights, and special offers via email.
-                </span>
-              </label>
-
-              <p className="text-xs text-muted-foreground">
-                By creating an account, you agree to our{" "}
-                <Link to="/terms" className="text-primary hover:text-primary-glow">Terms of Service</Link>
-                {" "}and{" "}
-                <Link to="/privacy" className="text-primary hover:text-primary-glow">Privacy Policy</Link>
-              </p>
-            </div>
-
-            <Button 
-              type="submit" 
-              className="cosmic-button w-full"
-              disabled={isLoading || !formData.zodiacSign}
+        <div className="flex flex-col gap-3">
+          {!googleBlocked && <div id="googleSignupBtnMount" />}
+          {!facebookBlocked && (
+            <button
+              onClick={handleFacebook}
+              className="w-full py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
             >
-              {isLoading ? "Creating account..." : "Create Account"}
-            </Button>
-          </form>
-
-          <div className="text-center space-y-4">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-card text-muted-foreground">Or sign up with</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Button 
-                variant="outline" 
-                className="cosmic-card border-primary/30"
-                onClick={async () => {
-                  try {
-                    const { error } = await supabase.auth.signInWithOAuth({
-                      provider: 'google',
-                      options: {
-                        redirectTo: `${window.location.origin}/dashboard`
-                      }
-                    });
-                    if (error) throw error;
-                  } catch (error: any) {
-                    toast({
-                      title: "Google sign up failed",
-                      description: "Please try again or use email/password.",
-                      variant: "destructive",
-                    });
-                  }
-                }}
-              >
-                Google
-              </Button>
-              <Button 
-                variant="outline" 
-                className="cosmic-card border-primary/30"
-                onClick={async () => {
-                  try {
-                    const { error } = await supabase.auth.signInWithOAuth({
-                      provider: 'facebook',
-                      options: {
-                        redirectTo: `${window.location.origin}/dashboard`
-                      }
-                    });
-                    if (error) throw error;
-                  } catch (error: any) {
-                    toast({
-                      title: "Facebook sign up failed",
-                      description: "Please try again or use email/password.",
-                      variant: "destructive",
-                    });
-                  }
-                }}
-              >
-                Facebook
-              </Button>
-            </div>
-
-            <p className="text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link to="/login" className="text-primary hover:text-primary-glow font-medium">
-                Sign in
-              </Link>
-            </p>
-          </div>
-        </Card>
+              Continue with Facebook
+            </button>
+          )}
+        </div>
       </div>
-    </div>
+    </main>
   );
-};
-
-export default SignUp;
+}
