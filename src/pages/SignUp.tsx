@@ -1,4 +1,3 @@
-// src/pages/SignUp.tsx
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { detectInAppBrowser } from "@/utils/inAppDetector";
@@ -15,12 +14,10 @@ export default function SignUp() {
   const [gisReady, setGisReady] = useState(false);
   const [gisTimeout, setGisTimeout] = useState(false);
 
-  // Email fallback
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Prefer Netlify env; fall back to index.html APP_CONFIG
   const GOOGLE_CLIENT_ID = useMemo(
     () =>
       (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ||
@@ -32,9 +29,8 @@ export default function SignUp() {
     setInApp(detectInAppBrowser());
   }, []);
 
-  // Only try to use GIS in real browsers (not in-app)
   useEffect(() => {
-    if (inApp) return; // don’t attempt GIS inside in-app browsers
+    if (inApp) return;
     let tries = 0;
     const max = 40;
     const poll = setInterval(() => {
@@ -46,18 +42,15 @@ export default function SignUp() {
         clearInterval(poll);
       }
     }, 100);
-
     const t = setTimeout(() => {
       if (!window.google) setGisTimeout(true);
     }, 3000);
-
     return () => {
       clearInterval(poll);
       clearTimeout(t);
     };
   }, [inApp]);
 
-  // Render the official Google button (GIS ID-token, NO Supabase branding)
   useEffect(() => {
     if (inApp) return;
     if (!gisReady || !window.google || !GOOGLE_CLIENT_ID) return;
@@ -89,20 +82,9 @@ export default function SignUp() {
         shape: "pill",
         logo_alignment: "left",
       });
-      // optional one-tap: window.google.accounts.id.prompt();
     }
   }, [inApp, gisReady, GOOGLE_CLIENT_ID]);
 
-  // Facebook via Supabase OAuth (keep for real browsers only)
-  const handleFacebook = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "facebook",
-      options: { redirectTo: window.location.origin + "/dashboard" },
-    });
-    if (error) alert(error.message);
-  };
-
-  // Email sign-up (works everywhere)
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -116,7 +98,6 @@ export default function SignUp() {
     alert("Check your email to confirm your account, then continue.");
   };
 
-  // “Open in browser / Copy link” helpers for in-app warning
   const copyLink = async () => {
     const url = "https://www.starsignstudio.com/signup";
     try {
@@ -141,8 +122,8 @@ export default function SignUp() {
   const WarningCard = () => (
     <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-100 space-y-3 text-center">
       <div>
-        You’re inside <b>{inApp}</b>’s in-app browser.<br />
-        Google & Facebook sign-up are blocked or unreliable here.
+        You’re inside an in-app browser (<b>{inApp}</b>). Google sign-up is blocked or unreliable here.
+        <br />Please open this page in <b>Safari</b> or <b>Chrome</b>.
       </div>
       <div className="flex gap-2 justify-center">
         <a
@@ -161,7 +142,7 @@ export default function SignUp() {
         </button>
       </div>
 
-      {/* Email fallback so users aren’t stuck */}
+      {/* Email fallback */}
       <form onSubmit={handleEmailSignup} className="space-y-2 text-left">
         <input
           type="email"
@@ -195,16 +176,14 @@ export default function SignUp() {
       <div className="w-full max-w-sm space-y-5">
         <h1 className="text-2xl font-bold text-center">Sign up for Star Sign Studio ✨</h1>
 
-        {/* In-app browsers: show warning + email fallback only */}
         {inApp ? (
           <WarningCard />
         ) : (
-          // Real browsers: show Google (GIS), Facebook, and email
           <div className="flex flex-col gap-3">
-            {/* Google via GIS (never says “Supabase”) */}
+            {/* Google (GIS) */}
             {!gisTimeout && <div id="googleSignupBtnMount" />}
 
-            {/* If GIS was blocked by CSP/ad-block, show graceful info */}
+            {/* GIS blocked by CSP/ad-block → provide info and rely on email below */}
             {gisTimeout && (
               <button
                 onClick={() =>
@@ -216,14 +195,6 @@ export default function SignUp() {
               </button>
             )}
 
-            {/* Facebook (only in real browsers) */}
-            <button
-              onClick={handleFacebook}
-              className="w-full py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-            >
-              Sign up with Facebook
-            </button>
-
             {/* Divider */}
             <div className="relative my-2">
               <div className="absolute inset-0 flex items-center">
@@ -234,7 +205,7 @@ export default function SignUp() {
               </div>
             </div>
 
-            {/* Email sign-up (always available) */}
+            {/* Email sign-up */}
             <form onSubmit={handleEmailSignup} className="space-y-2">
               <input
                 type="email"
