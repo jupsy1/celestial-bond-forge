@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 // Detect in-app browsers that break Google SSO
@@ -21,33 +21,42 @@ declare global {
 export default function Login() {
   const [inApp, setInApp] = useState<ReturnType<typeof detectInApp>>(null);
   const [gisReady, setGisReady] = useState(false);
+  const [gisError, setGisError] = useState<string | null>(null);
 
   // Read from Netlify env first, then from index.html fallback
-  const GOOGLE_CLIENT_ID =
-    (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ||
-    window.APP_CONFIG?.VITE_GOOGLE_CLIENT_ID;
+  const GOOGLE_CLIENT_ID = useMemo(
+    () =>
+      (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ||
+      window.APP_CONFIG?.VITE_GOOGLE_CLIENT_ID,
+    []
+  );
 
   useEffect(() => {
     setInApp(detectInApp());
   }, []);
 
-  // Load Google Identity Services script
+  // Wait for the GIS script that index.html loads
   useEffect(() => {
-    if (window.google) { setGisReady(true); return; }
-    const s = document.createElement("script");
-    s.src = "https://accounts.google.com/gsi/client";
-    s.async = true;
-    s.defer = true;
-    s.onload = () => setGisReady(true);
-    document.head.appendChild(s);
+    let tries = 0;
+    const maxTries = 40; // ~4s total
+    const t = setInterval(() => {
+      tries++;
+      if (window.google) {
+        setGisReady(true);
+        clearInterval(t);
+      } else if (tries >= maxTries) {
+        setGisError("Google script didn’t load. Check CSP/ad-blockers/network.");
+        clearInterval(t);
+      }
+    }, 100);
+    return () => clearInterval(t);
   }, []);
 
-  // Google (GIS) ID-token login — no supabase.co redirect/branding
   const handleGoogle = () => {
     if (inApp) {
       alert(
         `Google sign-in is blocked inside ${inApp}’s in-app browser.\n` +
-        `Please open this page in Safari or Chrome and try again.`
+          `Please open this page in Safari or Chrome and try again.`
       );
       return;
     }
@@ -60,28 +69,53 @@ export default function Login() {
       return;
     }
 
+    const onCredential = async (resp: any) => {
+      const idToken = resp?.credential;
+      if (!idToken) return;
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: "google",
+        token: idToken,
+      });
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      window.location.href = "/dashboard";
+    };
+
+    // Initialize + try One Tap prompt
     window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
-      callback: async (resp: any) => {
-        const idToken = resp?.credential;
-        if (!idToken) return;
-        const { error } = await supabase.auth.signInWithIdToken({
-          provider: "google",
-          token: idToken,
-        });
-        if (error) { alert(error.message); return; }
-        window.location.href = "/dashboard";
-      },
+      callback: onCredential,
       ux_mode: "popup",
       auto_select: false,
       itp_support: true,
     });
 
-    // Open Google chooser
-    window.google.accounts.id.prompt();
+    // Render Google button as a fallback (often needed on iOS)
+    const mount = document.getElementById("googleBtnMount");
+    if (mount) {
+      window.google.accounts.id.renderButton(mount, {
+        type: "standard",
+        theme: "outline",
+        size: "large",
+        text: "continue_with",
+        shape: "pill",
+        logo_alignment: "left",
+      });
+    }
+
+    window.google.accounts.id.prompt((n: any) => {
+      // If prompt can’t show, the rendered button still works
+      if (n?.isNotDisplayed?.()) {
+        console.warn("[GIS] prompt not displayed:", n?.getNotDisplayedReason?.());
+      }
+      if (n?.isSkippedMoment?.()) {
+        console.warn("[GIS] prompt skipped");
+      }
+    });
   };
 
-  // Facebook unchanged (redirect flow)
   const handleFacebook = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "facebook",
@@ -104,24 +138,35 @@ export default function Login() {
           </div>
         )}
 
-        <div className="flex flex-col gap-3">
-          {/* Google (GIS) — only show outside in-app browsers */}
-          {!inApp && (
+        {!inApp && (
+          <div className="flex flex-col gap-3">
             <button
               onClick={handleGoogle}
-              disabled={!gisReady || !GOOGLE_CLIENT_ID}
+              disabled={!GOOGLE_CLIENT_ID || !gisReady}
               className="w-full py-2 rounded-md bg-white text-black border hover:bg-gray-100 disabled:opacity-60"
             >
               Continue with Google
             </button>
-          )}
 
-          <button
-            onClick={handleFacebook}
-            className="w-full py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-          >
-            Continue with Facebook
-          </button>
+            {/* Google official button mount (fallback/assist) */}
+            <div id="googleBtnMount" />
+
+            <button
+              onClick={handleFacebook}
+              className="w-full py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Continue with Facebook
+            </button>
+          </div>
+        )}
+
+        {/* Tiny diagnostics (optional) */}
+        <div style={{ fontSize: 12, opacity: 0.75 }}>
+          GIS ready: {gisReady ? "yes" : "no"} {gisError ? `— ${gisError}` : ""}
+          <br />
+          Client ID present: {GOOGLE_CLIENT_ID ? "yes" : "no"}
+          <br />
+          In-app: {inApp ?? "none"}
         </div>
       </div>
     </main>
