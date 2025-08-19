@@ -71,6 +71,12 @@ export default function SignUp() {
   const [gisReady, setGisReady] = useState(false);
   const [gisTimeoutFired, setGisTimeoutFired] = useState(false);
 
+  // Email/password UI state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const GOOGLE_CLIENT_ID = useMemo(
     () =>
       (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ||
@@ -154,17 +160,63 @@ export default function SignUp() {
     if (error) alert(error.message);
   };
 
+  const handleEmailSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: window.location.origin + "/dashboard" },
+    });
+    setLoading(false);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    alert("Check your email to confirm your account, then continue.");
+  };
+
+  // “Open in browser / Copy link / Share” helpers for warning box
+  const [copied, setCopied] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const externalHref = "https://www.starsignstudio.com/signup";
+  const canShare = typeof navigator !== "undefined" && !!navigator.share;
+
   const copyLink = async () => {
+    const url = window.location.href;
     try {
-      await navigator.clipboard.writeText(window.location.href);
-      alert("Link copied! Open Safari/Chrome and paste to continue.");
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
     } catch {
       alert("Copy failed. Long-press the address bar to copy the link.");
     }
   };
-  const openInBrowser = () => {
-    window.open(window.location.href, "_blank", "noopener,noreferrer");
+  const shareLink = async () => {
+    setShareError(null);
+    try {
+      await navigator.share({
+        title: "Star Sign Studio",
+        text: "Open this in your browser to sign up:",
+        url: window.location.href,
+      });
+    } catch (e: any) {
+      if (e && e.name !== "AbortError") setShareError("Share unavailable here. Try Copy link instead.");
+    }
   };
+
   const openInstructions = isIOS()
     ? "Tap the ••• (or aA) menu and choose “Open in Safari”."
     : isAndroid()
@@ -172,9 +224,10 @@ export default function SignUp() {
     : "Open this page in your default browser.";
 
   const warningLines: string[] = [];
-  if (googleBlocked) warningLines.push("Google sign up doesn’t work inside this app’s browser.");
-  if (facebookBlocked) warningLines.push("Facebook sign up doesn’t work reliably inside this app’s browser.");
-  const showWarning = googleBlocked || facebookBlocked;
+  const { googleBlocked: _gB, facebookBlocked: _fB } = providerPolicy(inApp);
+  if (_gB || gisTimeoutFired) warningLines.push("Google sign up doesn’t work inside this app’s browser.");
+  if (_fB) warningLines.push("Facebook sign up doesn’t work reliably inside this app’s browser.");
+  const showWarning = (_gB || gisTimeoutFired) || _fB;
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-8">
@@ -187,29 +240,46 @@ export default function SignUp() {
               {inApp ? <>You’re inside <b>{inApp}</b>’s in-app browser.</> : null}
               <br />
               {warningLines.map((l, i) => (<div key={i}>⚠️ {l}</div>))}
-              {googleBlocked && (
+              {(_gB || gisTimeoutFired) && (
                 <div>👉 To use <b>Google</b> sign up, open <b>www.starsignstudio.com</b> in Safari or Chrome.</div>
               )}
-              {facebookBlocked && (
+              {_fB && (
                 <div>👉 If <b>Facebook</b> sign up fails, open in Safari/Chrome and try again.</div>
               )}
             </div>
 
-            <div className="flex gap-2 justify-center">
+            <div className="flex flex-wrap gap-2 justify-center">
               <button onClick={copyLink} className="py-2 px-3 rounded-md border bg-white text-black hover:bg-gray-100">
-                Copy link
+                {copied ? "Link copied ✓" : "Copy link"}
               </button>
-              <button onClick={openInBrowser} className="py-2 px-3 rounded-md border bg-white text-black hover:bg-gray-100">
+              <a
+                href={externalHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-2 px-3 rounded-md border bg-white text-black hover:bg-gray-100 inline-flex items-center justify-center"
+              >
                 Open in browser
-              </button>
+              </a>
+              {canShare && (
+                <button
+                  onClick={shareLink}
+                  className="py-2 px-3 rounded-md border bg-white text-black hover:bg-gray-100"
+                >
+                  Share…
+                </button>
+              )}
             </div>
 
             <div className="text-xs opacity-80">{openInstructions}</div>
+            {!copied && shareError && <div className="text-xs text-red-600">{shareError}</div>}
           </div>
         )}
 
         <div className="flex flex-col gap-3">
+          {/* Google button only when not blocked */}
           {!googleBlocked && <div id="googleSignupBtnMount" />}
+
+          {/* Facebook button only when not blocked */}
           {!facebookBlocked && (
             <button
               onClick={handleFacebook}
@@ -217,6 +287,52 @@ export default function SignUp() {
             >
               Continue with Facebook
             </button>
+          )}
+
+          {/* Divider */}
+          <div className="relative my-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-gray-500">or</span>
+            </div>
+          </div>
+
+          {/* Toggle email form */}
+          <button
+            onClick={() => setShowEmailForm((s) => !s)}
+            className="w-full py-2 rounded-md border bg-white text-black hover:bg-gray-100"
+          >
+            {showEmailForm ? "Hide email sign up" : "Sign up with email"}
+          </button>
+
+          {showEmailForm && (
+            <form onSubmit={handleEmailSignup} className="space-y-3 mt-1">
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                required
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-md border px-3 py-2"
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                required
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-md border px-3 py-2"
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-2 rounded-md bg-black text-white hover:bg-gray-900 disabled:opacity-60"
+              >
+                {loading ? "Creating account…" : "Create account"}
+              </button>
+            </form>
           )}
         </div>
       </div>
