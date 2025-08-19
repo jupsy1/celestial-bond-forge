@@ -108,24 +108,18 @@ export default function Login() {
       <div className="w-full max-w-sm space-y-4">
         <h1 className="text-2xl font-bold text-center">Sign in to Star Sign Studio ✨</h1>
 
-        {inApp ? (
+        {inApp && (
           <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm text-center">
-            🚫 You’re inside <b>{inApp}</b>’s in-app browser.<br />
-            Google login is blocked here by Google’s policies.<br />
-            👉 Please open <b>www.starsignstudio.com</b> in Safari or Chrome to continue.
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            <div id="googleBtnMount" />
-            <button
-              onClick={handleFacebook}
-              className="w-full py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-            >
-              Continue with Facebook
-            </button>
+            ⚠️ Google login doesn’t work inside <b>{inApp}</b>’s browser.<br />
+            👉 Please open <b>www.starsignstudio.com</b> in Safari or Chrome to use Google login.
+            <br />
+            ✅ You can still log in with Facebook below.
           </div>
         )}
-      </div>
-    </main>
-  );
-}
+
+        <div className="flex flex-col gap-3">
+          {!inApp && <div id="googleBtnMount" />}
+          <button
+            onClick={handleFacebook}
+            className="w-full py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+          >
