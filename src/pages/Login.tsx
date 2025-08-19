@@ -54,7 +54,6 @@ function providerPolicy(inApp: ReturnType<typeof detectInApp>) {
   switch (inApp) {
     case "Instagram":
     case "Pinterest":
-      // Your report: Google blocked, Facebook OK
       return { googleBlocked: true, facebookBlocked: false };
     case "TikTok":
     case "YouTube":
@@ -62,7 +61,6 @@ function providerPolicy(inApp: ReturnType<typeof detectInApp>) {
     case "GoogleApp":
     case "AndroidWebView":
     case "iOSWebView":
-      // Flakiest: block both to avoid dead clicks
       return { googleBlocked: true, facebookBlocked: true };
     default:
       return allowAll;
@@ -72,9 +70,13 @@ function providerPolicy(inApp: ReturnType<typeof detectInApp>) {
 export default function Login() {
   const [inApp, setInApp] = useState<ReturnType<typeof detectInApp>>(null);
   const [gisReady, setGisReady] = useState(false);
-  const [gisTimeoutFired, setGisTimeoutFired] = useState(false); // safety‑net if GIS fails to load
-  const [copied, setCopied] = useState(false);                   // ✅ show “Copied ✓”
-  const [shareError, setShareError] = useState<string | null>(null);
+  const [gisTimeoutFired, setGisTimeoutFired] = useState(false); // safety-net if GIS fails to load
+
+  // Email/password UI state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Prefer Netlify env; fall back to index.html APP_CONFIG
   const GOOGLE_CLIENT_ID = useMemo(
@@ -114,7 +116,7 @@ export default function Login() {
     };
   }, [blockedByUA]);
 
-  // Initialize GIS & render official Google button (ID‑token; no Supabase branding)
+  // Initialize GIS & render official Google button (ID-token; no Supabase branding)
   useEffect(() => {
     if (googleBlocked) return;
     if (!gisReady || !window.google || !GOOGLE_CLIENT_ID) return;
@@ -161,14 +163,43 @@ export default function Login() {
     if (error) alert(error.message);
   };
 
-  // ✅ Better “Copy link” with visible confirmation + fallback
+  // Email/password handlers
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    window.location.href = "/dashboard";
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      alert("Enter your email first.");
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + "/reset-password",
+    });
+    if (error) alert(error.message);
+    else alert("If an account exists for that email, a reset link has been sent.");
+  };
+
+  // “Open in browser / Copy link / Share” helpers for warning box
+  const [copied, setCopied] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const externalHref = "https://www.starsignstudio.com/login";
+  const canShare = typeof navigator !== "undefined" && !!navigator.share;
+
   const copyLink = async () => {
     const url = window.location.href;
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(url);
       } else {
-        // Fallback for older in‑app browsers
         const ta = document.createElement("textarea");
         ta.value = url;
         ta.style.position = "fixed";
@@ -182,12 +213,9 @@ export default function Login() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      alert("Copy failed. Long‑press the address bar to copy the link.");
+      alert("Copy failed. Long-press the address bar to copy the link.");
     }
   };
-
-  // ✅ Use native share sheet when available (often better than window.open)
-  const canShare = typeof navigator !== "undefined" && !!navigator.share;
   const shareLink = async () => {
     setShareError(null);
     try {
@@ -197,26 +225,21 @@ export default function Login() {
         url: window.location.href,
       });
     } catch (e: any) {
-      // User cancelled or share not available
       if (e && e.name !== "AbortError") setShareError("Share unavailable here. Try Copy link instead.");
     }
   };
 
-  // ✅ Render an actual anchor styled as a button (more reliable in webviews)
-  const externalHref = "https://www.starsignstudio.com/login";
-
-  // Helpers for warning box
   const openInstructions = isIOS()
     ? "Tap the ••• (or aA) menu and choose “Open in Safari”."
     : isAndroid()
     ? "Tap the ⋮ menu and choose “Open in Chrome”."
     : "Open this page in your default browser.";
 
-  // Always show a warning if ANY provider is blocked
   const warningLines: string[] = [];
-  if (googleBlocked) warningLines.push("Google login doesn’t work inside this app’s browser.");
-  if (facebookBlocked) warningLines.push("Facebook login doesn’t work reliably inside this app’s browser.");
-  const showWarning = googleBlocked || facebookBlocked;
+  const { googleBlocked: _gB, facebookBlocked: _fB } = providerPolicy(inApp);
+  if (_gB || gisTimeoutFired) warningLines.push("Google login doesn’t work inside this app’s browser.");
+  if (_fB) warningLines.push("Facebook login doesn’t work reliably inside this app’s browser.");
+  const showWarning = (_gB || gisTimeoutFired) || _fB;
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-8">
@@ -226,26 +249,22 @@ export default function Login() {
         {showWarning && (
           <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm text-center space-y-3">
             <div>
-              {inApp ? <>You’re inside <b>{inApp}</b>’s in‑app browser.</> : null}
+              {inApp ? <>You’re inside <b>{inApp}</b>’s in-app browser.</> : null}
               <br />
               {warningLines.map((l, i) => (<div key={i}>⚠️ {l}</div>))}
-              {googleBlocked && (
+              {(_gB || gisTimeoutFired) && (
                 <div>👉 To use <b>Google</b> login, open <b>www.starsignstudio.com</b> in Safari or Chrome.</div>
               )}
-              {facebookBlocked && (
+              {_fB && (
                 <div>👉 If <b>Facebook</b> login fails, open in Safari/Chrome and try again.</div>
               )}
             </div>
 
             <div className="flex flex-wrap gap-2 justify-center">
-              <button
-                onClick={copyLink}
-                className="py-2 px-3 rounded-md border bg-white text-black hover:bg-gray-100"
-              >
-                Copy link
+              <button onClick={copyLink} className="py-2 px-3 rounded-md border bg-white text-black hover:bg-gray-100">
+                {copied ? "Link copied ✓" : "Copy link"}
               </button>
 
-              {/* Visible anchor as button */}
               <a
                 href={externalHref}
                 target="_blank"
@@ -266,12 +285,7 @@ export default function Login() {
             </div>
 
             <div className="text-xs opacity-80">{openInstructions}</div>
-
-            {/* Small confirmations/errors */}
-            <div className="text-xs">
-              {copied && <span className="text-green-600">Link copied ✓</span>}
-              {!copied && shareError && <span className="text-red-600">{shareError}</span>}
-            </div>
+            {!copied && shareError && <div className="text-xs text-red-600">{shareError}</div>}
           </div>
         )}
 
@@ -287,6 +301,59 @@ export default function Login() {
             >
               Continue with Facebook
             </button>
+          )}
+
+          {/* Divider */}
+          <div className="relative my-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-gray-500">or</span>
+            </div>
+          </div>
+
+          {/* Toggle email form */}
+          <button
+            onClick={() => setShowEmailForm((s) => !s)}
+            className="w-full py-2 rounded-md border bg-white text-black hover:bg-gray-100"
+          >
+            {showEmailForm ? "Hide email login" : "Use email instead"}
+          </button>
+
+          {showEmailForm && (
+            <form onSubmit={handleEmailLogin} className="space-y-3 mt-1">
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                required
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-md border px-3 py-2"
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                required
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-md border px-3 py-2"
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-2 rounded-md bg-black text-white hover:bg-gray-900 disabled:opacity-60"
+              >
+                {loading ? "Signing in…" : "Sign in"}
+              </button>
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                className="w-full py-2 rounded-md border bg-white text-black hover:bg-gray-100"
+              >
+                Forgot password?
+              </button>
+            </form>
           )}
         </div>
       </div>
