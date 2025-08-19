@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-/** Broadened in-app / webview detection */
+/** Broad in-app / webview detection */
 function detectInApp():
   | "TikTok"
   | "YouTube"
@@ -15,21 +15,17 @@ function detectInApp():
   if (typeof navigator === "undefined") return null;
   const ua = (navigator.userAgent || navigator.vendor || "").toLowerCase();
 
-  // Common in-app signatures
   if (ua.includes("tiktok")) return "TikTok";
   if (ua.includes("youtube")) return "YouTube";
   if (ua.includes("instagram") || ua.includes("ig/")) return "Instagram";
   if (ua.includes("fbav") || ua.includes("fb_iab") || ua.includes("facebook")) return "FacebookApp";
   if (ua.includes("pinterest")) return "Pinterest";
-  if (ua.includes("gsa")) return "GoogleApp"; // Google Search App
+  if (ua.includes("gsa")) return "GoogleApp";            // Google Search App
+  if (ua.includes("; wv;")) return "AndroidWebView";     // Android WebView
 
-  // Generic Android WebView token
-  if (ua.includes("; wv;")) return "AndroidWebView";
-
-  // Heuristics for iOS WebViews (no “safari” token present)
   const isiOS = /iphone|ipad|ipod/.test(ua);
   const isSafari = ua.includes("safari");
-  if (isiOS && !isSafari) return "iOSWebView";
+  if (isiOS && !isSafari) return "iOSWebView";           // iOS WebView heuristic
 
   return null;
 }
@@ -50,9 +46,8 @@ declare global {
   }
 }
 
-/** Provider policy by environment */
+/** Provider policy per environment */
 function providerPolicy(inApp: ReturnType<typeof detectInApp>) {
-  // Default: real browsers (Safari/Chrome) → everything allowed
   const allowAll = { googleBlocked: false, facebookBlocked: false };
   if (!inApp) return allowAll;
 
@@ -67,7 +62,7 @@ function providerPolicy(inApp: ReturnType<typeof detectInApp>) {
     case "GoogleApp":
     case "AndroidWebView":
     case "iOSWebView":
-      // These are flakiest: block both to avoid dead clicks
+      // Flakiest: block both to avoid dead clicks
       return { googleBlocked: true, facebookBlocked: true };
     default:
       return allowAll;
@@ -77,7 +72,7 @@ function providerPolicy(inApp: ReturnType<typeof detectInApp>) {
 export default function Login() {
   const [inApp, setInApp] = useState<ReturnType<typeof detectInApp>>(null);
   const [gisReady, setGisReady] = useState(false);
-  const [gisTimeoutFired, setGisTimeoutFired] = useState(false); // safety-net
+  const [gisTimeoutFired, setGisTimeoutFired] = useState(false); // safety-net if GIS fails to load
 
   // Prefer Netlify env; fall back to index.html APP_CONFIG
   const GOOGLE_CLIENT_ID = useMemo(
@@ -92,37 +87,32 @@ export default function Login() {
   }, []);
 
   const { googleBlocked: blockedByUA, facebookBlocked } = providerPolicy(inApp);
-  // Safety-net: if GIS fails to load in ~3s, treat Google as blocked
   const googleBlocked = blockedByUA || gisTimeoutFired;
 
-  // Wait for GIS only when we *think* Google is allowed by UA
+  // Poll for GIS; if it doesn't appear in ~3s, assume blocked (webview/CSP)
   useEffect(() => {
     if (blockedByUA) return;
     let tries = 0;
-    const maxTries = 40; // ~4s total
-    const start = Date.now();
-    const t = setInterval(() => {
+    const maxTries = 40; // ~4s
+    const poll = setInterval(() => {
       tries++;
       if (window.google) {
         setGisReady(true);
-        clearInterval(t);
+        clearInterval(poll);
       } else if (tries >= maxTries) {
-        clearInterval(t);
+        clearInterval(poll);
       }
     }, 100);
-
-    // Safety-net timeout (3s): if GIS still not present, assume blocked (webview/CSP)
     const timeout = setTimeout(() => {
       if (!window.google) setGisTimeoutFired(true);
     }, 3000);
-
     return () => {
-      clearInterval(t);
+      clearInterval(poll);
       clearTimeout(timeout);
     };
   }, [blockedByUA]);
 
-  // Initialize GIS & render official Google button (only when not blocked)
+  // Initialize GIS & render official Google button (ID-token; no Supabase branding)
   useEffect(() => {
     if (googleBlocked) return;
     if (!gisReady || !window.google || !GOOGLE_CLIENT_ID) return;
@@ -156,12 +146,11 @@ export default function Login() {
         shape: "pill",
         logo_alignment: "left",
       });
-      // One Tap (optional); if suppressed, button still works
-      window.google.accounts.id.prompt();
+      window.google.accounts.id.prompt(); // optional One Tap
     }
   }, [googleBlocked, gisReady, GOOGLE_CLIENT_ID]);
 
-  // Facebook (hide when blocked, otherwise show)
+  // Facebook via redirect (keep)
   const handleFacebook = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "facebook",
@@ -170,7 +159,7 @@ export default function Login() {
     if (error) alert(error.message);
   };
 
-  // Helpers in warning box
+  // Helpers for warning box
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -226,7 +215,6 @@ export default function Login() {
           </div>
         )}
 
-        {/* Buttons area */}
         <div className="flex flex-col gap-3">
           {/* Google button only when not blocked */}
           {!googleBlocked && <div id="googleBtnMount" />}
@@ -242,7 +230,7 @@ export default function Login() {
           )}
         </div>
 
-        {/* Tiny diagnostics (remove later if you want) */}
+        {/* Diagnostics (optional, remove when done) */}
         <div style={{ fontSize: 12, opacity: 0.75 }}>
           In-app: {inApp ?? "none"} | GIS ready: {gisReady ? "yes" : "no"} | GIS timeout: {gisTimeoutFired ? "yes" : "no"}
         </div>
