@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-// Detect major in-app browsers (Google SSO blocked)
+// Detect in-app browsers that break Google SSO
 function detectInApp(): "TikTok" | "Instagram" | "Facebook" | null {
   if (typeof navigator === "undefined") return null;
   const ua = (navigator.userAgent || navigator.vendor || "").toLowerCase();
@@ -12,31 +12,26 @@ function detectInApp(): "TikTok" | "Instagram" | "Facebook" | null {
 }
 
 declare global {
-  interface Window { google?: any; __ENV__?: any }
+  interface Window {
+    google?: any;
+    APP_CONFIG?: { VITE_GOOGLE_CLIENT_ID?: string };
+  }
 }
 
 export default function Login() {
   const [inApp, setInApp] = useState<ReturnType<typeof detectInApp>>(null);
   const [gisReady, setGisReady] = useState(false);
 
-  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-  const HAS_ANON = !!import.meta.env.VITE_SUPABASE_ANON_KEY;
+  // Read from Netlify env first, then from index.html fallback
+  const GOOGLE_CLIENT_ID =
+    (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ||
+    window.APP_CONFIG?.VITE_GOOGLE_CLIENT_ID;
 
-  // expose envs for easy console check
   useEffect(() => {
-    window.__ENV__ = {
-      GOOGLE: GOOGLE_CLIENT_ID,
-      SUPABASE_URL,
-      ANON: HAS_ANON,
-    };
-    // eslint-disable-next-line no-console
-    console.log("ENV at runtime:", window.__ENV__);
-  }, [GOOGLE_CLIENT_ID, SUPABASE_URL, HAS_ANON]);
+    setInApp(detectInApp());
+  }, []);
 
-  useEffect(() => setInApp(detectInApp()), []);
-
-  // Load Google Identity Services
+  // Load Google Identity Services script
   useEffect(() => {
     if (window.google) { setGisReady(true); return; }
     const s = document.createElement("script");
@@ -44,25 +39,36 @@ export default function Login() {
     s.async = true;
     s.defer = true;
     s.onload = () => setGisReady(true);
-    s.onerror = () => console.warn("[GIS] failed to load script");
     document.head.appendChild(s);
   }, []);
 
-  // Google with GIS (ID-token) — no supabase.co redirect
+  // Google (GIS) ID-token login — no supabase.co redirect/branding
   const handleGoogle = () => {
     if (inApp) {
-      alert(`Google sign-in is blocked inside ${inApp}’s in-app browser.\nOpen in Safari/Chrome and try again.`);
+      alert(
+        `Google sign-in is blocked inside ${inApp}’s in-app browser.\n` +
+        `Please open this page in Safari or Chrome and try again.`
+      );
       return;
     }
-    if (!GOOGLE_CLIENT_ID) { alert("Missing VITE_GOOGLE_CLIENT_ID"); return; }
-    if (!gisReady || !window.google) { alert("Google sign-in isn’t ready yet. Try again."); return; }
+    if (!GOOGLE_CLIENT_ID) {
+      alert("Google sign-in isn’t configured (missing Client ID).");
+      return;
+    }
+    if (!gisReady || !window.google) {
+      alert("Google sign-in isn’t ready yet. Please try again in a moment.");
+      return;
+    }
 
     window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback: async (resp: any) => {
         const idToken = resp?.credential;
         if (!idToken) return;
-        const { error } = await supabase.auth.signInWithIdToken({ provider: "google", token: idToken });
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: idToken,
+        });
         if (error) { alert(error.message); return; }
         window.location.href = "/dashboard";
       },
@@ -70,10 +76,12 @@ export default function Login() {
       auto_select: false,
       itp_support: true,
     });
+
+    // Open Google chooser
     window.google.accounts.id.prompt();
   };
 
-  // Facebook unchanged
+  // Facebook unchanged (redirect flow)
   const handleFacebook = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "facebook",
@@ -87,14 +95,17 @@ export default function Login() {
       <div className="w-full max-w-sm space-y-4">
         <h1 className="text-2xl font-bold text-center">Sign in to Star Sign Studio ✨</h1>
 
+        {/* In-app browsers (TikTok/IG/FB) — show warning instead of a broken Google flow */}
         {inApp && (
           <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm">
             🚫 You’re inside <b>{inApp}</b>’s in-app browser.<br />
-            Google login is blocked here. Open <b>www.starsignstudio.com</b> in <b>Safari</b> or <b>Chrome</b>.
+            Google login is blocked here by Google’s policies.<br />
+            👉 Please open <b>www.starsignstudio.com</b> in <b>Safari</b> or <b>Chrome</b>.
           </div>
         )}
 
         <div className="flex flex-col gap-3">
+          {/* Google (GIS) — only show outside in-app browsers */}
           {!inApp && (
             <button
               onClick={handleGoogle}
@@ -104,21 +115,13 @@ export default function Login() {
               Continue with Google
             </button>
           )}
+
           <button
             onClick={handleFacebook}
             className="w-full py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
           >
             Continue with Facebook
           </button>
-        </div>
-
-        {/* TEMP diagnostics — remove after testing */}
-        <div id="envDiag" style={{fontSize:12, opacity:0.7, marginTop:16, textAlign:"left"}}>
-          <div>VITE_GOOGLE_CLIENT_ID set: {GOOGLE_CLIENT_ID ? "yes" : "no"}</div>
-          <div>VITE_SUPABASE_URL set: {SUPABASE_URL ? "yes" : "no"}</div>
-          <div>VITE_SUPABASE_ANON_KEY set: {HAS_ANON ? "yes" : "no"}</div>
-          <div>window.google loaded: {typeof window !== "undefined" && (window as any).google ? "yes" : "no"}</div>
-          <div style={{wordBreak:"break-all"}}>UA: {typeof navigator !== "undefined" ? navigator.userAgent : "n/a"}</div>
         </div>
       </div>
     </main>
