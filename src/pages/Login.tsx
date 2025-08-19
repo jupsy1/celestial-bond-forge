@@ -289,11 +289,6 @@ export default function Login() {
             </button>
           )}
         </div>
-
-        {/* Diagnostics (optional, remove when done) */}
-        <div style={{ fontSize: 12, opacity: 0.75 }}>
-          In-app: {inApp ?? "none"} | GIS ready: {gisReady ? "yes" : "no"} | GIS timeout: {gisTimeoutFired ? "yes" : "no"}
-        </div>
       </div>
     </main>
   );
